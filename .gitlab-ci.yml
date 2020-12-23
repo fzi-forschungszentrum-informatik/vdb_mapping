@@ -1,0 +1,4 @@
+include:
+  - project: 'continuous_integration/ci_scripts'
+    ref: master
+    file: '/gitlab-ci-yml/fla_pipeline.yml'
