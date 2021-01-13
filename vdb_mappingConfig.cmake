@@ -4,5 +4,6 @@ include(CMakeFindDependencyMacro)
 
 find_dependency(OpenVDB)
 find_dependency(TBB)
+find_dependency(PCL)
 
 include("${CMAKE_CURRENT_LIST_DIR}/vdb_mappingTargets.cmake")

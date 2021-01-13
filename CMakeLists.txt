@@ -17,6 +17,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 ## System dependencies are found with CMake's conventions
 find_package(OpenVDB REQUIRED)
 find_package(TBB REQUIRED)
+find_package(PCL REQUIRED)
 
 
 ###########
@@ -40,11 +41,13 @@ target_include_directories(${PROJECT_NAME}
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     ${OpenVDB_INCLUDE_DIR}
+    ${PCL_INCLUDE_DIRS}
     )
 
 target_link_libraries(${PROJECT_NAME}
  ${OpenVDB_LIBRARIES}
  ${TBB_LIBRARIES}
+ ${PCL_LIBRARIES}
  -lHalf
 )
 
