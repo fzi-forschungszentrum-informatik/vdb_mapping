@@ -4,13 +4,13 @@
 
 VDBMapping::VDBMapping()
 {
-  // std::cout << "hello vdb" << std::endl;
+  // TODO remove hard coded variables
   m_resolution = 0.1;
   m_prob_hit   = 0.7;
   m_prob_miss  = 0.4;
   double p_min = 0.12;
   double p_max = 0.97;
-  m_max_range  = 0.0;
+  m_max_range  = 15.0;
 
   m_thres_min = log(p_min) - log(1 - p_min);
   m_thres_max = log(p_max) - log(1 - p_max);
