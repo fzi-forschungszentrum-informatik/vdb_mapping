@@ -14,8 +14,8 @@ VDBMapping::VDBMapping()
 
   m_thres_min = log(p_min) - log(1 - p_min);
   m_thres_max = log(p_max) - log(1 - p_max);
-  m_l_miss = log(m_prob_miss) - log(1 - m_prob_miss);
-  m_l_hit  = log(m_prob_hit) - log(1 - m_prob_hit);
+  m_l_miss    = log(m_prob_miss) - log(1 - m_prob_miss);
+  m_l_hit     = log(m_prob_hit) - log(1 - m_prob_hit);
 
   m_vdb_grid = GridT::create(0.0);
   m_vdb_grid->setTransform(openvdb::math::Transform::createLinearTransform(m_resolution));
@@ -28,19 +28,21 @@ VDBMapping::VDBMapping()
 void VDBMapping::insertPointCloud(const PointCloudT::ConstPtr& cloud,
                                   Eigen::Matrix<double, 3, 1> origin)
 {
-  openvdb::Vec3d start(origin.x(), origin.y(), origin.z());
-
-  const Vec3T eye(m_vdb_grid->worldToIndex(start));
-
-  openvdb::Vec3d end;
-  openvdb::Coord index_end;
-  GridT::Accessor acc = m_vdb_grid->getAccessor();
-  openvdb::Vec3d dir;
-
   RayT ray;
   DDAT dda;
 
-  bool ray_too_long = false;
+  openvdb::Vec3d ray_origin_world(origin.x(), origin.y(), origin.z());
+  const Vec3T ray_origing_index(m_vdb_grid->worldToIndex(ray_origin_world));
+
+  openvdb::Vec3d ray_end_world;
+  openvdb::Coord ray_end_index;
+
+  openvdb::Vec3d ray_direction;
+
+  GridT::Accessor acc = m_vdb_grid->getAccessor();
+
+
+  bool max_range_ray;
 
   GridT::Ptr temp_grid     = GridT::create(0.0);
   GridT::Accessor temp_acc = temp_grid->getAccessor();
@@ -59,44 +61,52 @@ void VDBMapping::insertPointCloud(const PointCloudT::ConstPtr& cloud,
     b = f > 0;
   };
 
+  openvdb::Vec3d w, x;
+  double s;
+
   for (const PointT& pt : *cloud)
   {
-    ray_too_long = false;
-    end          = openvdb::Vec3d(pt.x, pt.y, pt.z);
-    if (m_max_range > 0.0 && (end - start).length() > m_max_range)
+    max_range_ray = false;
+    ray_end_world = openvdb::Vec3d(pt.x, pt.y, pt.z);
+    if (m_max_range > 0.0 && (ray_end_world - ray_origin_world).length() > m_max_range)
     {
-      end          = start + (end - start).unit() * m_max_range;
-      ray_too_long = true;
+      ray_end_world = ray_origin_world + (ray_end_world - ray_origin_world).unit() * m_max_range;
+      max_range_ray = true;
     }
 
-    openvdb::Vec3d buffer = m_vdb_grid->worldToIndex(end);
-    index_end             = openvdb::Coord(buffer[0], buffer[1], buffer[2]);
+    openvdb::Vec3d buffer = m_vdb_grid->worldToIndex(ray_end_world);
+    ray_end_index         = openvdb::Coord(buffer[0], buffer[1], buffer[2]);
 
-    ray.setEye(eye);
-    ray.setDir(buffer - eye);
+    ray.setEye(ray_origing_index);
+    ray.setDir(buffer - ray_origing_index);
     dda.init(ray);
 
+    w = buffer - ray_origing_index;
+    s = w.length();
+    w.normalize();
 
-    // TODO Better compare function
-    auto compare = [](openvdb::Coord a, openvdb::Coord b) {
-      int dist = std::abs(a.x() - b.x()) + std::abs(a.y() - b.y()) + std::abs(a.z() - b.z());
-      return (dist <= 3);
+    auto calcSD = [&w, &x, &s, &resolution = m_resolution]() {
+      return (((w.x() * x.x() + w.y() * x.y() + w.z() * x.z()) - s));
     };
 
-    while (!compare(dda.voxel(), index_end))
+    double sd = -1;
+    while (sd < 0)
     {
+      x = openvdb::Vec3d(dda.voxel().x(), dda.voxel().y(), dda.voxel().z()) - ray_origing_index;
+      sd = calcSD();
       temp_acc.setActiveState(dda.voxel(), true);
       dda.step();
     }
-    if(!ray_too_long)
+
+    if (!max_range_ray)
     {
       temp_acc.setValueOn(dda.voxel(), -1);
     }
   }
 
-  for(GridT::ValueOnCIter iter = temp_grid->cbeginValueOn(); iter; ++iter)
+  for (GridT::ValueOnCIter iter = temp_grid->cbeginValueOn(); iter; ++iter)
   {
-    if(*iter == -1)
+    if (*iter == -1)
     {
       acc.modifyValueAndActiveState(iter.getCoord(), hit);
     }
