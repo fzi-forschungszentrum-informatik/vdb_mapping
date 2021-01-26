@@ -54,6 +54,8 @@ private:
   double m_prob_miss;
   double m_thres_min;
   double m_thres_max;
+  double m_l_miss;
+  double m_l_hit;
 };
 
 #endif /* VDB_MAPPING_VDB_MAPPING_H_INCLUDED */

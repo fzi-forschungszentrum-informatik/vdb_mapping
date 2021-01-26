@@ -14,6 +14,8 @@ VDBMapping::VDBMapping()
 
   m_thres_min = log(p_min) - log(1 - p_min);
   m_thres_max = log(p_max) - log(1 - p_max);
+  m_l_miss = log(m_prob_miss) - log(1 - m_prob_miss);
+  m_l_hit  = log(m_prob_hit) - log(1 - m_prob_hit);
 
   m_vdb_grid = GridT::create(0.0);
   m_vdb_grid->setTransform(openvdb::math::Transform::createLinearTransform(m_resolution));
@@ -43,26 +45,14 @@ void VDBMapping::insertPointCloud(const PointCloudT::ConstPtr& cloud,
   GridT::Ptr temp_grid     = GridT::create(0.0);
   GridT::Accessor temp_acc = temp_grid->getAccessor();
 
-  // TODO not nice
-  double thres_min = m_thres_min;
-  double thres_max = m_thres_max;
-
-  // Log Odds calculation
-  double l_miss = log(m_prob_miss) - log(1 - m_prob_miss);
-  double l_hit  = log(m_prob_hit) - log(1 - m_prob_hit);
-
-  // TODO which of these lambdas is still in use
-  auto miss = [&l_miss, &thres_min](float& f, bool& b) {
-    // Adding Log Odds for miss, Prior is currently not inserted
+  auto miss = [&l_miss = m_l_miss, &thres_min = m_thres_min](float& f, bool& b) {
     f += l_miss;
-    // Capping all values
     if (f < thres_min)
       f = thres_min;
     b = f > 0;
   };
 
-  auto hit = [&l_hit, &thres_max](float& f, bool& b) {
-    // l_current+=log10(occ)-log10(1-occ)-l_start
+  auto hit = [&l_hit = m_l_hit, &thres_max = m_thres_max](float& f, bool& b) {
     f += l_hit;
     if (f > thres_max)
       f = thres_max;
@@ -73,7 +63,6 @@ void VDBMapping::insertPointCloud(const PointCloudT::ConstPtr& cloud,
   {
     ray_too_long = false;
     end          = openvdb::Vec3d(pt.x, pt.y, pt.z);
-    // TODO this should be an absolute value in the length
     if (m_max_range > 0.0 && (end - start).length() > m_max_range)
     {
       end          = start + (end - start).unit() * m_max_range;
