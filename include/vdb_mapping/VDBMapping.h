@@ -38,6 +38,10 @@ class VDBMapping
   using GridT = openvdb::FloatGrid;
 
 public:
+
+  /*!
+   * \brief Accumulation of configuration parameters
+   */
   struct Config
   {
     double max_range;
@@ -50,14 +54,32 @@ public:
   VDBMapping(double resolution);
   virtual ~VDBMapping(){};
 
+  /*!
+   * \brief Handles the integration of new PointCloud data into the VDB data structure.
+   * All datapoints are raycasted starting from the origin position
+   *
+   * \param cloud Input cloud in map coordinates
+   * \param origin Sensor position in map coordinates
+   */
   void insertPointCloud(const PointCloudT::ConstPtr& cloud, Eigen::Matrix<double, 3, 1> origin);
 
+
+  /*!
+   * \brief Returns a pointer to the VDB map structure
+   *
+   * \returns Map pointer
+   */
   GridT::Ptr getMap() { return m_vdb_grid; }
 
+
+  /*!
+   * \brief Handles changing the mapping config
+   *
+   * \param config Configuration structure
+   */
   void setConfig(Config config)
   {
     m_max_range = config.max_range;
-
     // Store probabilities as log odds
     m_prob_miss      = log(config.prob_miss) - log(1 - config.prob_miss);
     m_prob_hit       = log(config.prob_hit) - log(1 - config.prob_hit);
@@ -68,13 +90,37 @@ public:
   }
 
 private:
+  /*!
+   * \brief VDB grid pointer
+   */
   GridT::Ptr m_vdb_grid;
+  /*!
+   * \brief Maximum raycasting distance
+   */
   double m_max_range;
+  /*!
+   * \brief Grid resolution of the map
+   */
   double m_resolution;
+  /*!
+   * \brief Probability update value for passing an obstacle
+   */
   double m_prob_hit;
+  /*!
+   * \brief Probability update value for passing free space
+   */
   double m_prob_miss;
+  /*!
+   * \brief Upper occupancy probability threshold
+   */
   double m_prob_thres_min;
+  /*!
+   * \brief Lower occupancy probability threshold
+   */
   double m_prob_thres_max;
+  /*!
+   * \brief Flag checking wether a valid config was already loaded
+   */
   bool m_config_set;
 };
 
