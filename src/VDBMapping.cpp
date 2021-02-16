@@ -2,32 +2,24 @@
 
 #include <iostream>
 
-VDBMapping::VDBMapping()
+VDBMapping::VDBMapping(double resolution)
+  : m_resolution(resolution)
+  , m_config_set(false)
 {
-  // TODO remove hard coded variables
-  m_resolution = 0.1;
-  m_prob_hit   = 0.7;
-  m_prob_miss  = 0.4;
-  double p_min = 0.12;
-  double p_max = 0.97;
-  m_max_range  = 15.0;
-
-  m_thres_min = log(p_min) - log(1 - p_min);
-  m_thres_max = log(p_max) - log(1 - p_max);
-  m_l_miss    = log(m_prob_miss) - log(1 - m_prob_miss);
-  m_l_hit     = log(m_prob_hit) - log(1 - m_prob_hit);
-
   m_vdb_grid = GridT::create(0.0);
   m_vdb_grid->setTransform(openvdb::math::Transform::createLinearTransform(m_resolution));
   m_vdb_grid->setGridClass(openvdb::GRID_LEVEL_SET);
-
-  std::cout << "Initialization complete" << std::endl;
 }
 
 
 void VDBMapping::insertPointCloud(const PointCloudT::ConstPtr& cloud,
                                   Eigen::Matrix<double, 3, 1> origin)
 {
+  if(!m_config_set)
+  {
+    std::cout << "Map not properly configured. Did you call setConfig method?" << std::endl;
+  }
+
   RayT ray;
   DDAT dda;
 
@@ -68,7 +60,7 @@ void VDBMapping::insertPointCloud(const PointCloudT::ConstPtr& cloud,
     while (signed_distance < 0)
     {
       x = openvdb::Vec3d(dda.voxel().x(), dda.voxel().y(), dda.voxel().z()) - ray_origing_index;
-      // Signed distance in grid coordinates (not scaled with the grid resolution!!!)
+      // Signed distance in grid coordinates for faster processing(not scaled with the grid resolution!!!)
       signed_distance = ray_direction.dot(x) - ray_length;
       temp_acc.setActiveState(dda.voxel(), true);
       dda.step();
@@ -80,17 +72,17 @@ void VDBMapping::insertPointCloud(const PointCloudT::ConstPtr& cloud,
     }
   }
 
-  auto miss = [&l_miss = m_l_miss, &thres_min = m_thres_min](float& f, bool& b) {
-    f += l_miss;
-    if (f < thres_min)
-      f = thres_min;
+  auto miss = [&prob_miss = m_prob_miss, &prob_thres_min = m_prob_thres_min](float& f, bool& b) {
+    f += prob_miss;
+    if (f < prob_thres_min)
+      f = prob_thres_min;
     b = f > 0;
   };
 
-  auto hit = [&l_hit = m_l_hit, &thres_max = m_thres_max](float& f, bool& b) {
-    f += l_hit;
-    if (f > thres_max)
-      f = thres_max;
+  auto hit = [&prob_hit = m_prob_hit, &prob_thres_max = m_prob_thres_max](float& f, bool& b) {
+    f += prob_hit;
+    if (f > prob_thres_max)
+      f = prob_thres_max;
     b = f > 0;
   };
 
