@@ -34,7 +34,6 @@ class VDBMapping
   using Vec3T = RayT::Vec3Type;
   using DDAT  = openvdb::math::DDA<RayT, 0>;
 
-  // TODO vdb grid type hier auch später mal veränderbar machen
   using GridT = openvdb::FloatGrid;
 
 public:
