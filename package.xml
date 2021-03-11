@@ -2,7 +2,7 @@
 <package format="2">
   <name>vdb_mapping</name>
   <version>0.1.0</version>
-  <description>The vdb_mapping package</description>
+  <description>The vdb_mapping core package used for fast performant volumetric mapping.</description>
 
   <maintainer email="grosse@fzi.de">Marvin Große Besselmann</maintainer>
 
