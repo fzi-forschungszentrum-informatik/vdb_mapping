@@ -84,10 +84,9 @@ bool VDBMapping::insertPointCloud(const PointCloudT::ConstPtr& cloud,
       max_range_ray = true;
     }
 
-    openvdb::Vec3d buffer = m_vdb_grid->worldToIndex(ray_end_world);
+    ray_direction = m_vdb_grid->worldToIndex(ray_end_world - ray_origin_world);
 
-    ray_direction = buffer - ray_origing_index;
-    ray.setEye(ray_origing_index);
+    ray.setEye(ray_origin_index);
     ray.setDir(ray_direction);
     dda.init(ray);
 
