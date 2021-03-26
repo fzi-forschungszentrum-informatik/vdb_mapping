@@ -43,6 +43,7 @@
  */
 class VDBMapping
 {
+public:
   using PointT      = pcl::PointXYZ;
   using PointCloudT = pcl::PointCloud<PointT>;
 
@@ -52,7 +53,6 @@ class VDBMapping
 
   using GridT = openvdb::FloatGrid;
 
-public:
   /*!
    * \brief Accumulation of configuration parameters
    */
