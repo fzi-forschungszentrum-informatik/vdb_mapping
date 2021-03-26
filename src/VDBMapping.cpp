@@ -29,7 +29,7 @@
 
 #include <iostream>
 
-VDBMapping::VDBMapping(double resolution)
+VDBMapping::VDBMapping(const double resolution)
   : m_resolution(resolution)
   , m_config_set(false)
 {
@@ -40,13 +40,14 @@ VDBMapping::VDBMapping(double resolution)
 }
 
 
-void VDBMapping::insertPointCloud(const PointCloudT::ConstPtr& cloud,
-                                  Eigen::Matrix<double, 3, 1> origin)
+bool VDBMapping::insertPointCloud(const PointCloudT::ConstPtr& cloud,
+                                  const Eigen::Matrix<double, 3, 1> origin)
 {
   // Check if a valid configuration was loaded
   if (!m_config_set)
   {
-    std::cout << "Map not properly configured. Did you call setConfig method?" << std::endl;
+    std::cerr << "Map not properly configured. Did you call setConfig method?" << std::endl;
+    return false;
   }
 
   RayT ray;
@@ -55,7 +56,7 @@ void VDBMapping::insertPointCloud(const PointCloudT::ConstPtr& cloud,
   // Ray origin in world coordinates
   openvdb::Vec3d ray_origin_world(origin.x(), origin.y(), origin.z());
   // Ray origin in index coordinates
-  const Vec3T ray_origing_index(m_vdb_grid->worldToIndex(ray_origin_world));
+  const Vec3T ray_origin_index(m_vdb_grid->worldToIndex(ray_origin_world));
   // Ray end point in world coordinates
   openvdb::Vec3d ray_end_world;
   // Direction the ray is point towards
@@ -141,4 +142,5 @@ void VDBMapping::insertPointCloud(const PointCloudT::ConstPtr& cloud,
       acc.modifyValueAndActiveState(iter.getCoord(), miss);
     }
   }
+  return true;
 }

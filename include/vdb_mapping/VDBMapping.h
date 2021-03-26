@@ -53,7 +53,6 @@ class VDBMapping
   using GridT = openvdb::FloatGrid;
 
 public:
-
   /*!
    * \brief Accumulation of configuration parameters
    */
@@ -66,7 +65,8 @@ public:
     double prob_thres_max;
   };
 
-  VDBMapping(double resolution);
+  VDBMapping() = delete;
+
   /*!
    * \brief Construktur creates a new VDBMapping objekt with parametrizable grid resolution
    *
@@ -81,8 +81,11 @@ public:
    *
    * \param cloud Input cloud in map coordinates
    * \param origin Sensor position in map coordinates
+   *
+   * \returns Was the insertion of the new pointcloud successful
    */
-  void insertPointCloud(const PointCloudT::ConstPtr& cloud, Eigen::Matrix<double, 3, 1> origin);
+  bool insertPointCloud(const PointCloudT::ConstPtr& cloud,
+                        const Eigen::Matrix<double, 3, 1> origin);
 
 
   /*!
@@ -90,7 +93,7 @@ public:
    *
    * \returns Map pointer
    */
-  GridT::Ptr getMap() { return m_vdb_grid; }
+  GridT::Ptr getMap() const { return m_vdb_grid; }
 
 
   /*!
