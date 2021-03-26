@@ -8,7 +8,6 @@
 
   <license>Apache-2.0</license>
 
-
   <!-- Url tags are optional, but multiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
@@ -20,8 +19,8 @@
 
   <depend>eigen</depend>
   <depend>OpenVDB</depend>
-  <depend>TBB</depend>
   <depend>PCL</depend>
+  <depend>TBB</depend>
 
   <export>
     <build_type>cmake</build_type>
