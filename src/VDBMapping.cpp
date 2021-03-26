@@ -115,19 +115,21 @@ bool VDBMapping::insertPointCloud(const PointCloudT::ConstPtr& cloud,
   }
 
   // Probability update lambda for free space grid elements
-  auto miss = [&prob_miss = m_prob_miss, &prob_thres_min = m_prob_thres_min](float& f, bool& b) {
-    f += prob_miss;
-    if (f < prob_thres_min)
-      f = prob_thres_min;
-    b = f > 0;
+  auto miss = [&prob_miss      = m_logodds_miss,
+               &prob_thres_min = m_logodds_thres_min](float& voxel_value, bool& active) {
+    voxel_value += prob_miss;
+    if (voxel_value < prob_thres_min)
+      voxel_value = prob_thres_min;
+    active = voxel_value > 0;
   };
 
   // Probability update lambda for occupied grid elements
-  auto hit = [&prob_hit = m_prob_hit, &prob_thres_max = m_prob_thres_max](float& f, bool& b) {
-    f += prob_hit;
-    if (f > prob_thres_max)
-      f = prob_thres_max;
-    b = f > 0;
+  auto hit = [&prob_hit = m_logodds_hit, &prob_thres_max = m_logodds_thres_max](float& voxel_value,
+                                                                                bool& active) {
+    voxel_value += prob_hit;
+    if (voxel_value > prob_thres_max)
+      voxel_value = prob_thres_max;
+    active = voxel_value > 0;
   };
 
   // Integrating the data of the temporary grid into the map using the probability update functions
@@ -143,4 +145,35 @@ bool VDBMapping::insertPointCloud(const PointCloudT::ConstPtr& cloud,
     }
   }
   return true;
+}
+
+void VDBMapping::setConfig(const Config config)
+{
+  // Sanity Check for input config
+  if (config.prob_miss > 0.5)
+  {
+    std::cerr << "Probability for a miss should be below 0.5 but is " << config.prob_miss
+              << std::endl;
+    return;
+  }
+  if (config.prob_hit < 0.5)
+  {
+    std::cerr << "Probability for a hit should be above 0.5 but is " << config.prob_miss
+              << std::endl;
+    return;
+  }
+
+  if (config.max_range < 0.0)
+  {
+    std::cerr << "Max range of " << config.max_range << " invalid. Range cannot be negative."
+              << config.prob_miss << std::endl;
+    return;
+  }
+  m_max_range = config.max_range;
+  // Store probabilities as log odds
+  m_logodds_miss      = log(config.prob_miss) - log(1 - config.prob_miss);
+  m_logodds_hit       = log(config.prob_hit) - log(1 - config.prob_hit);
+  m_logodds_thres_min = log(config.prob_thres_min) - log(1 - config.prob_thres_min);
+  m_logodds_thres_max = log(config.prob_thres_max) - log(1 - config.prob_thres_max);
+  m_config_set        = true;
 }

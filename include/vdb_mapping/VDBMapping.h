@@ -101,17 +101,7 @@ public:
    *
    * \param config Configuration structure
    */
-  void setConfig(Config config)
-  {
-    m_max_range = config.max_range;
-    // Store probabilities as log odds
-    m_prob_miss      = log(config.prob_miss) - log(1 - config.prob_miss);
-    m_prob_hit       = log(config.prob_hit) - log(1 - config.prob_hit);
-    m_prob_thres_min = log(config.prob_thres_min) - log(1 - config.prob_thres_min);
-    m_prob_thres_max = log(config.prob_thres_max) - log(1 - config.prob_thres_max);
-
-    m_config_set = true;
-  }
+  void setConfig(const Config config);
 
 private:
   /*!
@@ -129,19 +119,19 @@ private:
   /*!
    * \brief Probability update value for passing an obstacle
    */
-  double m_prob_hit;
+  double m_logodds_hit;
   /*!
    * \brief Probability update value for passing free space
    */
-  double m_prob_miss;
+  double m_logodds_miss;
   /*!
    * \brief Upper occupancy probability threshold
    */
-  double m_prob_thres_min;
+  double m_logodds_thres_min;
   /*!
    * \brief Lower occupancy probability threshold
    */
-  double m_prob_thres_max;
+  double m_logodds_thres_max;
   /*!
    * \brief Flag checking wether a valid config was already loaded
    */
