@@ -38,6 +38,9 @@
 
 #include <eigen3/Eigen/Geometry>
 
+/*!
+ * \brief Main Mapping class which handles all data integration
+ */
 class VDBMapping
 {
   using PointT      = pcl::PointXYZ;
@@ -64,6 +67,12 @@ public:
   };
 
   VDBMapping(double resolution);
+  /*!
+   * \brief Construktur creates a new VDBMapping objekt with parametrizable grid resolution
+   *
+   * \param resolution Resolution of the VDB Grid
+   */
+  VDBMapping(const double resolution);
   virtual ~VDBMapping(){};
 
   /*!
