@@ -18,9 +18,9 @@
   <buildtool_depend>cmake</buildtool_depend>
 
   <depend>eigen</depend>
-  <depend>OpenVDB</depend>
-  <depend>PCL</depend>
-  <depend>TBB</depend>
+  <depend>libopenvdb-dev</depend>
+  <depend>libpcl-dev</depend>
+  <depend>libtbb-dev</depend>
 
   <export>
     <build_type>cmake</build_type>
