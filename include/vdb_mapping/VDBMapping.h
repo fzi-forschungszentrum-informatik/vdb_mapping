@@ -76,6 +76,20 @@ public:
   virtual ~VDBMapping(){};
 
   /*!
+   * \brief Creates a new VDB Grid
+   *
+   * \param resolution Resolution of the grid
+   *
+   * \returns Grid shared pointer
+   */
+  GridT::Ptr createVDBMap(double resolution);
+
+  /*!
+   * \brief Reset the current map
+   */
+  void resetMap();
+
+  /*!
    * \brief Handles the integration of new PointCloud data into the VDB data structure.
    * All datapoints are raycasted starting from the origin position
    *
@@ -87,7 +101,6 @@ public:
   bool insertPointCloud(const PointCloudT::ConstPtr& cloud,
                         const Eigen::Matrix<double, 3, 1> origin);
 
-
   /*!
    * \brief Returns a pointer to the VDB map structure
    *
@@ -95,13 +108,13 @@ public:
    */
   GridT::Ptr getMap() const { return m_vdb_grid; }
 
-
   /*!
    * \brief Handles changing the mapping config
    *
    * \param config Configuration structure
    */
   void setConfig(const Config config);
+
 
 private:
   /*!

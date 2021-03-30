@@ -34,11 +34,22 @@ VDBMapping::VDBMapping(const double resolution)
   , m_config_set(false)
 {
   // Initialize Grid
-  m_vdb_grid = GridT::create(0.0);
-  m_vdb_grid->setTransform(openvdb::math::Transform::createLinearTransform(m_resolution));
-  m_vdb_grid->setGridClass(openvdb::GRID_LEVEL_SET);
+  m_vdb_grid = createVDBMap(m_resolution);
 }
 
+void VDBMapping::resetMap()
+{
+  m_vdb_grid->clear();
+  m_vdb_grid = createVDBMap(m_resolution);
+}
+
+VDBMapping::GridT::Ptr VDBMapping::createVDBMap(double resolution)
+{
+  GridT::Ptr new_map = GridT::create(0.0);
+  new_map->setTransform(openvdb::math::Transform::createLinearTransform(m_resolution));
+  new_map->setGridClass(openvdb::GRID_LEVEL_SET);
+  return new_map;
+}
 
 bool VDBMapping::insertPointCloud(const PointCloudT::ConstPtr& cloud,
                                   const Eigen::Matrix<double, 3, 1> origin)
