@@ -65,7 +65,9 @@ public:
     double prob_thres_max;
   };
 
-  VDBMapping() = delete;
+  VDBMapping()                  = delete;
+  VDBMapping(const VDBMapping&) = delete;
+  VDBMapping& operator=(const VDBMapping&) = delete;
 
   /*!
    * \brief Construktur creates a new VDBMapping objekt with parametrizable grid resolution
