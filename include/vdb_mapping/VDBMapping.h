@@ -27,16 +27,17 @@
 #ifndef VDB_MAPPING_VDB_MAPPING_H_INCLUDED
 #define VDB_MAPPING_VDB_MAPPING_H_INCLUDED
 
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+
+#include <eigen3/Eigen/Geometry>
+
 #include <openvdb/Types.h>
 #include <openvdb/math/DDA.h>
 #include <openvdb/math/Ray.h>
 #include <openvdb/openvdb.h>
 #include <openvdb/tools/Morphology.h>
 
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-
-#include <eigen3/Eigen/Geometry>
 
 /*!
  * \brief Main Mapping class which handles all data integration
@@ -101,7 +102,7 @@ public:
    * \returns Was the insertion of the new pointcloud successful
    */
   bool insertPointCloud(const PointCloudT::ConstPtr& cloud,
-                        const Eigen::Matrix<double, 3, 1> origin);
+                        const Eigen::Matrix<double, 3, 1>& origin);
 
   /*!
    * \brief Returns a pointer to the VDB map structure

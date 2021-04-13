@@ -2,3 +2,8 @@ include:
   - project: 'continuous_integration/ci_scripts'
     ref: master
     file: '/gitlab-ci-yml/fla_pipeline.yml'
+
+#variables:
+  #BUILD_KINETIC: "false"
+  #BUILD_MELODIC: "true"
+  #BUILD_NOETIC: "true"

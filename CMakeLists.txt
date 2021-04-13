@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0.2)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules" ${CMAKE_MODULE_PATH})
 
-project(vdb_mapping)
+project(vdb_mapping CXX)
 
 if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
   message("${PROJECT_NAME}: You did not request a specific build type: selecting 'Release'.")
@@ -12,17 +12,36 @@ endif()
 find_package(Eigen3 REQUIRED)
 find_package(OpenVDB REQUIRED)
 find_package(PCL REQUIRED)
+find_package(TBB REQUIRED)
 
 ###########
 ## Build ##
 ###########
+
+##
+## Check C++14 support/ enable global pedantic and Wall
+##
+include(DefineCXX14CompilerFlag)
+DEFINE_CXX_14_COMPILER_FLAG(CXX14_FLAG)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic")
+
+##
+## Collect source format files
+##
+include(ClangformatMacros)
+include(ClangtidyMacros)
+add_format_source(${PROJECT_NAME} PATTERN "include/${PROJECT_NAME}/[a-zA-Z]*.h")
+add_format_source(${PROJECT_NAME} PATTERN "src/[a-zA-Z]*.h")
+add_format_source(${PROJECT_NAME} PATTERN "src/[a-zA-Z]*.cpp")
+ADD_CLANGFORMAT_TARGET(${PROJECT_NAME})
+ADD_CLANGTIDY_TARGET(${PROJECT_NAME})
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME} SHARED
   src/VDBMapping.cpp
 )
 
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_14)
+target_compile_options(${PROJECT_NAME} PUBLIC ${CXX14_FLAG})
 
 target_include_directories(${PROJECT_NAME}
   PRIVATE
@@ -32,15 +51,16 @@ target_include_directories(${PROJECT_NAME}
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
+    ${EIGEN3_INCLUDE_DIR}
+    ${OpenVDB_INCLUDE_DIRS}
+    ${PCL_INCLUDE_DIRS}
     )
 
-  target_link_libraries(${PROJECT_NAME}
-    PUBLIC
-      ${OpenVDB_LIBRARIES}
-      ${PCL_LIBRARIES}
-    PRIVATE
-      Eigen3::Eigen
-      )
+target_link_libraries(${PROJECT_NAME}
+  PUBLIC
+    ${OpenVDB_LIBRARIES}
+    ${PCL_LIBRARIES}
+    )
 
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
@@ -79,6 +99,7 @@ install(
   FILES
     ${PROJECT_NAME}Config.cmake ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
     CMakeModules/FindOpenVDB.cmake
+    CMakeModules/FindTBB.cmake
   DESTINATION
     lib/cmake/${PROJECT_NAME}
   )
