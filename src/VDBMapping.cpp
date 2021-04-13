@@ -130,8 +130,7 @@ bool VDBMapping::insertPointCloud(const PointCloudT::ConstPtr& cloud,
     voxel_value += prob_miss;
     if (voxel_value < prob_thres_min)
     {
-      voxel_value = prob_thres_min;
-    active = voxel_value > 0;
+      active = false;
     }
   };
 
@@ -141,8 +140,7 @@ bool VDBMapping::insertPointCloud(const PointCloudT::ConstPtr& cloud,
     voxel_value += prob_hit;
     if (voxel_value > prob_thres_max)
     {
-      voxel_value = prob_thres_max;
-    active = voxel_value > 0;
+      active = true;
     }
   };
 
