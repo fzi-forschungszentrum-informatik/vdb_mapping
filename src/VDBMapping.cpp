@@ -52,7 +52,7 @@ VDBMapping::GridT::Ptr VDBMapping::createVDBMap(double resolution)
 }
 
 bool VDBMapping::insertPointCloud(const PointCloudT::ConstPtr& cloud,
-                                  const Eigen::Matrix<double, 3, 1> origin)
+                                  const Eigen::Matrix<double, 3, 1>& origin)
 {
   // Check if a valid configuration was loaded
   if (!m_config_set)
@@ -129,8 +129,10 @@ bool VDBMapping::insertPointCloud(const PointCloudT::ConstPtr& cloud,
                &prob_thres_min = m_logodds_thres_min](float& voxel_value, bool& active) {
     voxel_value += prob_miss;
     if (voxel_value < prob_thres_min)
+    {
       voxel_value = prob_thres_min;
     active = voxel_value > 0;
+    }
   };
 
   // Probability update lambda for occupied grid elements
@@ -138,8 +140,10 @@ bool VDBMapping::insertPointCloud(const PointCloudT::ConstPtr& cloud,
                                                                                 bool& active) {
     voxel_value += prob_hit;
     if (voxel_value > prob_thres_max)
+    {
       voxel_value = prob_thres_max;
     active = voxel_value > 0;
+    }
   };
 
   // Integrating the data of the temporary grid into the map using the probability update functions
