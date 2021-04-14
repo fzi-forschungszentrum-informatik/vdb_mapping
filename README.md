@@ -63,17 +63,18 @@ source deve/setup.bash
 
 ## Acknowledgement
 
-<a href="https://robdekon.de/">
-  <img src="https://robdekon.de/user/themes/robdekon/images/robdekon_logo_web.svg"
-  alt="robdekon_logo" height="40">
-</a>
-
-Supported by ROBDEKON - Robotic systems for decontamination in hazardous environments  
-More information: [robdekon.de](https://robdekon.de/)
+The research leading to this package has received funding from the German Federal Ministry of Education and Research under grant agreement No. 13N14679:  
 
 <a href="https://www.bmbf.de/">
   <img src="https://robdekon.de/user/themes/robdekon/images/BMBF_gefoerdert_2017_web.de.svg"
-  alt="bmbf" height="80" align="left">
-</a>
+  alt="bmbf" height="80">
+</a>  
+  
+ROBDEKON - Robotic systems for decontamination in hazardous environments  
+More information: [robdekon.de](https://robdekon.de/)  
 
-The ROBDEKON project is funded by the German Federal Ministry of Education and Research under grant agreement No. 13N14679.
+
+<a href="https://robdekon.de/">
+  <img src="https://robdekon.de/user/themes/robdekon/images/robdekon_logo_web.svg"
+  alt="robdekon_logo" height="40">
+</a>  
