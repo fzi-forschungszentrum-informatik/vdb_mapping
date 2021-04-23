@@ -42,6 +42,7 @@
 /*!
  * \brief Main Mapping class which handles all data integration
  */
+template <typename T = float>
 class VDBMapping
 {
 public:
@@ -52,7 +53,7 @@ public:
   using Vec3T = RayT::Vec3Type;
   using DDAT  = openvdb::math::DDA<RayT, 0>;
 
-  using GridT = openvdb::FloatGrid;
+  using GridT = openvdb::Grid<typename openvdb::tree::Tree4<T, 5, 4, 3>::Type>;
 
   /*!
    * \brief Accumulation of configuration parameters
@@ -85,7 +86,7 @@ public:
    *
    * \returns Grid shared pointer
    */
-  GridT::Ptr createVDBMap(double resolution);
+  typename GridT::Ptr createVDBMap(double resolution);
 
   /*!
    * \brief Reset the current map
@@ -109,7 +110,7 @@ public:
    *
    * \returns Map pointer
    */
-  GridT::Ptr getMap() const { return m_vdb_grid; }
+  typename GridT::Ptr getMap() const { return m_vdb_grid; }
 
   /*!
    * \brief Handles changing the mapping config
@@ -123,7 +124,7 @@ private:
   /*!
    * \brief VDB grid pointer
    */
-  GridT::Ptr m_vdb_grid;
+  typename GridT::Ptr m_vdb_grid;
   /*!
    * \brief Maximum raycasting distance
    */
@@ -153,5 +154,7 @@ private:
    */
   bool m_config_set;
 };
+
+#include "VDBMapping.hpp"
 
 #endif /* VDB_MAPPING_VDB_MAPPING_H_INCLUDED */

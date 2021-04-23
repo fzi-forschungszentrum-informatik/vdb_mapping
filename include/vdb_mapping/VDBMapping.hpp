@@ -25,11 +25,12 @@
  */
 //----------------------------------------------------------------------
 
-#include <vdb_mapping/VDBMapping.h>
 
 #include <iostream>
 
-VDBMapping::VDBMapping(const double resolution)
+
+template <class T>
+VDBMapping<T>::VDBMapping(const double resolution)
   : m_resolution(resolution)
   , m_config_set(false)
 {
@@ -37,22 +38,25 @@ VDBMapping::VDBMapping(const double resolution)
   m_vdb_grid = createVDBMap(m_resolution);
 }
 
-void VDBMapping::resetMap()
+template <class T>
+void VDBMapping<T>::resetMap()
 {
   m_vdb_grid->clear();
   m_vdb_grid = createVDBMap(m_resolution);
 }
 
-VDBMapping::GridT::Ptr VDBMapping::createVDBMap(double resolution)
+template <class T>
+typename VDBMapping<T>::GridT::Ptr VDBMapping<T>::createVDBMap(double resolution)
 {
-  GridT::Ptr new_map = GridT::create(0.0);
+  typename GridT::Ptr new_map = GridT::create(0.0);
   new_map->setTransform(openvdb::math::Transform::createLinearTransform(m_resolution));
   new_map->setGridClass(openvdb::GRID_LEVEL_SET);
   return new_map;
 }
 
-bool VDBMapping::insertPointCloud(const PointCloudT::ConstPtr& cloud,
-                                  const Eigen::Matrix<double, 3, 1>& origin)
+template <class T>
+bool VDBMapping<T>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
+                                     const Eigen::Matrix<double, 3, 1>& origin)
 {
   // Check if a valid configuration was loaded
   if (!m_config_set)
@@ -74,12 +78,12 @@ bool VDBMapping::insertPointCloud(const PointCloudT::ConstPtr& cloud,
   openvdb::Vec3d ray_direction;
   bool max_range_ray;
 
-  GridT::Accessor acc = m_vdb_grid->getAccessor();
+  typename GridT::Accessor acc = m_vdb_grid->getAccessor();
 
   // Creating a temporary grid in which the new data is casted. This way we prevent the computation
   // of redundant probability updates in the actual map
-  GridT::Ptr temp_grid     = GridT::create(0.0);
-  GridT::Accessor temp_acc = temp_grid->getAccessor();
+  typename GridT::Ptr temp_grid     = GridT::create(0.0);
+  typename GridT::Accessor temp_acc = temp_grid->getAccessor();
 
   openvdb::Vec3d x;
   double ray_length;
@@ -125,7 +129,7 @@ bool VDBMapping::insertPointCloud(const PointCloudT::ConstPtr& cloud,
   }
 
   // Probability update lambda for free space grid elements
-  auto miss = [&prob_miss      = m_logodds_miss,
+  auto miss = [& prob_miss     = m_logodds_miss,
                &prob_thres_min = m_logodds_thres_min](float& voxel_value, bool& active) {
     voxel_value += prob_miss;
     if (voxel_value < prob_thres_min)
@@ -135,8 +139,8 @@ bool VDBMapping::insertPointCloud(const PointCloudT::ConstPtr& cloud,
   };
 
   // Probability update lambda for occupied grid elements
-  auto hit = [&prob_hit = m_logodds_hit, &prob_thres_max = m_logodds_thres_max](float& voxel_value,
-                                                                                bool& active) {
+  auto hit = [& prob_hit = m_logodds_hit, &prob_thres_max = m_logodds_thres_max](float& voxel_value,
+                                                                                 bool& active) {
     voxel_value += prob_hit;
     if (voxel_value > prob_thres_max)
     {
@@ -145,7 +149,7 @@ bool VDBMapping::insertPointCloud(const PointCloudT::ConstPtr& cloud,
   };
 
   // Integrating the data of the temporary grid into the map using the probability update functions
-  for (GridT::ValueOnCIter iter = temp_grid->cbeginValueOn(); iter; ++iter)
+  for (typename GridT::ValueOnCIter iter = temp_grid->cbeginValueOn(); iter; ++iter)
   {
     if (*iter == -1)
     {
@@ -159,7 +163,8 @@ bool VDBMapping::insertPointCloud(const PointCloudT::ConstPtr& cloud,
   return true;
 }
 
-void VDBMapping::setConfig(const Config config)
+template <class T>
+void VDBMapping<T>::setConfig(const Config config)
 {
   // Sanity Check for input config
   if (config.prob_miss > 0.5)
