@@ -35,28 +35,21 @@ template <class T>
 class DataNode
 {
 public:
-
   //! Construct an empty DataNode
   DataNode() {}
 
-  DataNode(T data){m_data = data;}
+  DataNode(T data) { m_data = data; }
 
   //! Deconstructor
   virtual ~DataNode() {}
 
-  //void setData(const float data);
+  // void setData(const float data);
 
-  //float getData() const;
+  // float getData() const;
 
-  void updateNode(const T& data) {
-    m_data = data;
-  }
+  void updateNode(const T& data) { m_data = data; }
 
-  T getData() const
-  {
-    return m_data;
-  }
-
+  T getData() const { return m_data; }
 
 
   ///////////////////////////////////////
@@ -100,8 +93,7 @@ public:
   }
 
 protected:
-  T m_data; 
-
+  T m_data;
 };
 
 template <class T>
@@ -119,13 +111,18 @@ inline std::ostream& operator<<(std::ostream& ostr, const DataNode<T>& node)
   return ostr;
 }
 
-//TODO understand what these should be doing and fill them correctlyp
+// TODO understand what these should be doing and fill them correctlyp
 template <class T>
-inline DataNode<T> operator*(float scalar, const DataNode<T> &v) { return scalar; }
+inline DataNode<T> operator*(float scalar, const DataNode<T>& v)
+{
+  return scalar;
+}
 
 template <class T>
-inline DataNode<T> operator*(const DataNode<T> &u, const DataNode<T> &v) { return 1; }
+inline DataNode<T> operator*(const DataNode<T>& u, const DataNode<T>& v)
+{
+  return 1;
+}
 
 
 #endif
-

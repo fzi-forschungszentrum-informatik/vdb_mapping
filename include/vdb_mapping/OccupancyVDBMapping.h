@@ -32,10 +32,10 @@
 class OccupancyVDBMapping : public VDBMapping<float>
 {
 public:
-  
   OccupancyVDBMapping(const double resolution)
-   : VDBMapping<float>(resolution)
-  {}
+    : VDBMapping<float>(resolution)
+  {
+  }
 
   /*!
    * \brief Handles the integration of new PointCloud data into the VDB data structure.
@@ -48,9 +48,6 @@ public:
    */
   bool insertPointCloud(const PointCloudT::ConstPtr& cloud,
                         const Eigen::Matrix<double, 3, 1>& origin) override;
-
-
-
 };
 
 
