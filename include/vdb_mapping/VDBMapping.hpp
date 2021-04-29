@@ -82,8 +82,10 @@ bool VDBMapping<T>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
 
   // Creating a temporary grid in which the new data is casted. This way we prevent the computation
   // of redundant probability updates in the actual map
-  typename GridT::Ptr temp_grid     = GridT::create(0.0);
-  typename GridT::Accessor temp_acc = temp_grid->getAccessor();
+  //typename GridT::Ptr temp_grid     = GridT::create(0.0);
+  //typename GridT::Accessor temp_acc = temp_grid->getAccessor();
+  typename openvdb::FloatGrid::Ptr temp_grid     = openvdb::FloatGrid::create(0.0);
+  typename openvdb::FloatGrid::Accessor temp_acc = temp_grid->getAccessor();
 
   openvdb::Vec3d x;
   double ray_length;
@@ -149,7 +151,8 @@ bool VDBMapping<T>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
   };
 
   // Integrating the data of the temporary grid into the map using the probability update functions
-  for (typename GridT::ValueOnCIter iter = temp_grid->cbeginValueOn(); iter; ++iter)
+  //for (typename GridT::ValueOnCIter iter = temp_grid->cbeginValueOn(); iter; ++iter)
+  for (typename openvdb::FloatGrid::ValueOnCIter iter = temp_grid->cbeginValueOn(); iter; ++iter)
   {
     if (*iter == -1)
     {
