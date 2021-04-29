@@ -47,7 +47,7 @@ public:
 
   // float getData() const;
 
-  void updateNode(const T& data) { m_data = data; }
+  void update(const T& data) { m_data = data; }
 
   T getData() const { return m_data; }
 
