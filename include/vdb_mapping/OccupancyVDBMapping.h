@@ -32,23 +32,48 @@
 class OccupancyVDBMapping : public VDBMapping<float>
 {
 public:
+  /*!
+   * \brief Accumulation of configuration parameters
+   */
+  struct Config : BaseConfig
+  {
+    double prob_hit;
+    double prob_miss;
+    double prob_thres_min;
+    double prob_thres_max;
+  };
+
   OccupancyVDBMapping(const double resolution)
     : VDBMapping<float>(resolution)
   {
   }
 
   /*!
-   * \brief Handles the integration of new PointCloud data into the VDB data structure.
-   * All datapoints are raycasted starting from the origin position
+   * \brief Handles changing the mapping config
    *
-   * \param cloud Input cloud in map coordinates
-   * \param origin Sensor position in map coordinates
-   *
-   * \returns Was the insertion of the new pointcloud successful
+   * \param config Configuration structure
    */
-  bool insertPointCloud(const PointCloudT::ConstPtr& cloud,
-                        const Eigen::Matrix<double, 3, 1>& origin) override;
-};
+  void setConfig(const Config confiig);
 
+protected:
+  bool updateNode(openvdb::FloatGrid::Ptr& temp_grid) override;
+
+  /*!
+   * \brief Probability update value for passing an obstacle
+   */
+  double m_logodds_hit;
+  /*!
+   * \brief Probability update value for passing free space
+   */
+  double m_logodds_miss;
+  /*!
+   * \brief Upper occupancy probability threshold
+   */
+  double m_logodds_thres_min;
+  /*!
+   * \brief Lower occupancy probability threshold
+   */
+  double m_logodds_thres_max;
+};
 
 #endif /* VDB_MAPPING_OCCUPANCY_VDB_MAPPING_H_INCLUDED */

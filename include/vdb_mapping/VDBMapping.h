@@ -60,7 +60,7 @@ public:
   /*!
    * \brief Accumulation of configuration parameters
    */
-  struct Config
+  struct BaseConfig
   {
     double max_range;
     double prob_hit;
@@ -104,12 +104,8 @@ public:
    *
    * \returns Was the insertion of the new pointcloud successful
    */
-  virtual bool insertPointCloud(const PointCloudT::ConstPtr& cloud,
-                                const Eigen::Matrix<double, 3, 1>& origin)
-  {
-    // This needs to be implemented in the derived class
-    return false;
-  }
+  bool insertPointCloud(const PointCloudT::ConstPtr& cloud,
+                        const Eigen::Matrix<double, 3, 1>& origin);
 
   /*!
    * \brief Returns a pointer to the VDB map structure
@@ -123,10 +119,11 @@ public:
    *
    * \param config Configuration structure
    */
-  void setConfig(const Config config);
+  void setConfig(const BaseConfig config);
 
 
 protected:
+  virtual bool updateNode(openvdb::FloatGrid::Ptr& temp_grid) { return false; }
   /*!
    * \brief VDB grid pointer
    */
@@ -139,22 +136,6 @@ protected:
    * \brief Grid resolution of the map
    */
   double m_resolution;
-  /*!
-   * \brief Probability update value for passing an obstacle
-   */
-  double m_logodds_hit;
-  /*!
-   * \brief Probability update value for passing free space
-   */
-  double m_logodds_miss;
-  /*!
-   * \brief Upper occupancy probability threshold
-   */
-  double m_logodds_thres_min;
-  /*!
-   * \brief Lower occupancy probability threshold
-   */
-  double m_logodds_thres_max;
   /*!
    * \brief Flag checking wether a valid config was already loaded
    */
