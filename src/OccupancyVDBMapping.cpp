@@ -34,20 +34,20 @@ bool OccupancyVDBMapping::updateNode(openvdb::FloatGrid::Ptr& temp_grid)
 {
   typename GridT::Accessor acc = m_vdb_grid->getAccessor();
   // Probability update lambda for free space grid elements
-  auto miss = [& prob_miss = m_logodds_miss, &prob_thres_min = m_logodds_thres_min](DataNodeT& node,
-                                                                                    bool& active) {
-    node.update(node.getData() + prob_miss);
-    if (node.getData() < prob_thres_min)
+  auto miss = [& prob_miss     = m_logodds_miss,
+               &prob_thres_min = m_logodds_thres_min](float& voxel_value, bool& active) {
+    voxel_value += prob_miss;
+    if (voxel_value < prob_thres_min)
     {
       active = false;
     }
   };
 
   // Probability update lambda for occupied grid elements
-  auto hit = [& prob_hit = m_logodds_hit, &prob_thres_max = m_logodds_thres_max](DataNodeT& node,
+  auto hit = [& prob_hit = m_logodds_hit, &prob_thres_max = m_logodds_thres_max](float& voxel_value,
                                                                                  bool& active) {
-    node.update(node.getData() + prob_hit);
-    if (node.getData() > prob_thres_max)
+    voxel_value += prob_hit;
+    if (voxel_value > prob_thres_max)
     {
       active = true;
     }

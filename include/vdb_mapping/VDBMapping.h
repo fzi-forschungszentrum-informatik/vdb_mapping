@@ -39,7 +39,6 @@
 #include <openvdb/openvdb.h>
 #include <openvdb/tools/Morphology.h>
 
-#include "vdb_mapping/DataNode.h"
 
 /*!
  * \brief Main Mapping class which handles all data integration
@@ -55,8 +54,7 @@ public:
   using Vec3T = RayT::Vec3Type;
   using DDAT  = openvdb::math::DDA<RayT, 0>;
 
-  using DataNodeT = DataNode<T>;
-  using GridT     = openvdb::Grid<typename openvdb::tree::Tree4<DataNodeT, 5, 4, 3>::Type>;
+  using GridT = openvdb::Grid<typename openvdb::tree::Tree4<T, 5, 4, 3>::Type>;
 
   /*!
    * \brief Accumulation of configuration parameters
