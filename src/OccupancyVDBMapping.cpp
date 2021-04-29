@@ -19,6 +19,7 @@
 //----------------------------------------------------------------------
 /*!\file
  *
+ * \author  Marvin Große Besselmann grosse@fzi.de
  * \author  Lennart Puck puck@fzi.de
  * \date    2021-04-29
  *

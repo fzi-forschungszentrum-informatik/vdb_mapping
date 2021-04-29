@@ -20,6 +20,7 @@
 /*!\file
  *
  * \author  Marvin Große Besselmann grosse@fzi.de
+ * \author  Lennart Puck puck@fzi.de
  * \date    2020-12-23
  *
  */
