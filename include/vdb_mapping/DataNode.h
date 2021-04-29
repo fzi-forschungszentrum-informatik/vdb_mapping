@@ -31,14 +31,15 @@
 
 
 // TODO: maybe implement more operators (needed for openvdb), compiles for now
+template <class T>
 class DataNode
 {
 public:
 
   //! Construct an empty DataNode
-  DataNode() {m_data = 0.0f;}
+  DataNode() {}
 
-  DataNode(float data){m_data = data;}
+  DataNode(T data){m_data = data;}
 
   //! Deconstructor
   virtual ~DataNode() {}
@@ -47,11 +48,11 @@ public:
 
   //float getData() const;
 
-  void updateNode(const float data) {
+  void updateNode(const T& data) {
     m_data = data;
   }
 
-  float getData() const
+  T getData() const
   {
     return m_data;
   }
@@ -99,26 +100,31 @@ public:
   }
 
 protected:
-  float m_data; 
+  T m_data; 
 
 };
 
-inline DataNode Abs(const DataNode& node)
+template <class T>
+inline DataNode<T> Abs(const DataNode<T>& node)
 {
   // TODO: properly implement DataNode Abs
   return node;
 }
 
-inline std::ostream& operator<<(std::ostream& ostr, const DataNode& node)
+template <class T>
+inline std::ostream& operator<<(std::ostream& ostr, const DataNode<T>& node)
 {
   // TODO: properly implement DataNode operator<<
   ostr << "Hello, I'm a DataNode";
   return ostr;
 }
 
-//TODO understand what these should be doing and fill them correctly
-inline DataNode operator*(float scalar, const DataNode &v) { return scalar; }
-inline DataNode operator*(const DataNode &u, const DataNode &v) { return 1; }
+//TODO understand what these should be doing and fill them correctlyp
+template <class T>
+inline DataNode<T> operator*(float scalar, const DataNode<T> &v) { return scalar; }
+
+template <class T>
+inline DataNode<T> operator*(const DataNode<T> &u, const DataNode<T> &v) { return 1; }
 
 
 #endif

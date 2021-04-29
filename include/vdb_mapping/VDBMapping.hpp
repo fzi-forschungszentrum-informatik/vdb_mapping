@@ -132,7 +132,7 @@ bool VDBMapping<T>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
 
   // Probability update lambda for free space grid elements
   auto miss = [& prob_miss     = m_logodds_miss,
-               &prob_thres_min = m_logodds_thres_min](DataNode& node, bool& active) {
+               &prob_thres_min = m_logodds_thres_min](DataNode<T>& node, bool& active) {
     node.updateNode(node.getData() + prob_miss);
     if (node.getData() < prob_thres_min)
     {
@@ -141,7 +141,7 @@ bool VDBMapping<T>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
   };
 
   // Probability update lambda for occupied grid elements
-  auto hit = [& prob_hit = m_logodds_hit, &prob_thres_max = m_logodds_thres_max](DataNode& node,
+  auto hit = [& prob_hit = m_logodds_hit, &prob_thres_max = m_logodds_thres_max](DataNode<T>& node,
                                                                                  bool& active) {
     node.updateNode(node.getData() + prob_hit);
     if (node.getData() > prob_thres_max)
