@@ -54,7 +54,8 @@ public:
   using Vec3T = RayT::Vec3Type;
   using DDAT  = openvdb::math::DDA<RayT, 0>;
 
-  using GridT = openvdb::Grid<typename openvdb::tree::Tree4<DataNode<T>, 5, 4, 3>::Type>;
+  using DataNodeT = DataNode<T>;
+  using GridT = openvdb::Grid<typename openvdb::tree::Tree4<DataNodeT, 5, 4, 3>::Type>;
 
   /*!
    * \brief Accumulation of configuration parameters
@@ -103,8 +104,11 @@ public:
    *
    * \returns Was the insertion of the new pointcloud successful
    */
-  bool insertPointCloud(const PointCloudT::ConstPtr& cloud,
-                        const Eigen::Matrix<double, 3, 1>& origin);
+   virtual bool insertPointCloud(const PointCloudT::ConstPtr& cloud,
+                        const Eigen::Matrix<double, 3, 1>& origin) {
+     //This needs to be implemented in the derived class
+     return false;
+   }
 
   /*!
    * \brief Returns a pointer to the VDB map structure
@@ -121,7 +125,7 @@ public:
   void setConfig(const Config config);
 
 
-private:
+protected:
   /*!
    * \brief VDB grid pointer
    */

@@ -37,18 +37,18 @@ ADD_CLANGFORMAT_TARGET(${PROJECT_NAME})
 ADD_CLANGTIDY_TARGET(${PROJECT_NAME})
 
 ## Declare a C++ library
-add_library(${PROJECT_NAME} INTERFACE
-  #src/VDBMapping.h 
+add_library(${PROJECT_NAME} SHARED
+  src/OccupancyVDBMapping.cpp 
   )
 
-target_compile_options(${PROJECT_NAME} INTERFACE ${CXX14_FLAG})
+target_compile_options(${PROJECT_NAME} PUBLIC ${CXX14_FLAG})
 
-#target_include_directories(${PROJECT_NAME}
-  #PRIVATE
-    #${CMAKE_CURRENT_SOURCE_DIR}/src
-    #)
 target_include_directories(${PROJECT_NAME}
-  INTERFACE
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+target_include_directories(${PROJECT_NAME}
+  PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     ${EIGEN3_INCLUDE_DIR}
@@ -57,7 +57,7 @@ target_include_directories(${PROJECT_NAME}
     )
 
 target_link_libraries(${PROJECT_NAME}
-  INTERFACE
+  PUBLIC
     ${OpenVDB_LIBRARIES}
     ${PCL_LIBRARIES}
     )
