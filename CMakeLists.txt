@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.0.2)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules" ${CMAKE_MODULE_PATH})
 
+option(BUILDING_TESTS "Build unit tests." ON)
+
 project(vdb_mapping CXX)
 
 if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
@@ -60,10 +62,21 @@ target_link_libraries(${PROJECT_NAME}
   PUBLIC
     ${OpenVDB_LIBRARIES}
     ${PCL_LIBRARIES}
+    ${TBB_LIBRARIES}
+    -lHalf
     )
 
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
+##
+## Build testing if enabled by option
+##
+if (BUILDING_TESTS)
+  enable_testing()
+  add_subdirectory(tests)
+else()
+  message(STATUS "Building tests disabled.")
+endif()
 
 #############
 ## Install ##
