@@ -113,20 +113,29 @@ bool VDBMapping<T>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
     // The signed distance is calculated for each DDA step to determine, when the endpoint is
     // reached.
     double signed_distance = 1;
-    while (signed_distance > 0)
+    while (signed_distance >= 0)
     {
       x = openvdb::Vec3d(dda.voxel().x(), dda.voxel().y(), dda.voxel().z()) - ray_origin_index;
       // Signed distance in grid coordinates for faster processing(not scaled with the grid
       // resolution!!!)
-      signed_distance = ray_length - ray_direction.dot(x);
-      temp_acc.setActiveState(dda.voxel(), true);
-      dda.step();
-    }
-
-    // Set the last passed voxel as occupied if the ray wasn't longer than the maximum raycast range
-    if (!max_range_ray)
-    {
-      temp_acc.setValueOn(dda.voxel(), -1);
+      // The main idea of the dot product is to first get the center of the current voxel and then
+      // add half the ray direction to gain the outer boundary of this voxel
+      signed_distance =
+        ray_length - ray_direction.dot(x + 0.5 + ray_direction / 2.0);
+      if (signed_distance >= 0)
+      {
+        temp_acc.setActiveState(dda.voxel(), true);
+        dda.step();
+      }
+      else
+      {
+        // Set the last passed voxel as occupied if the ray wasn't longer than the maximum raycast
+        // range
+        if (!max_range_ray)
+        {
+          temp_acc.setValueOn(dda.voxel(), -1);
+        }
+      }
     }
   }
 
