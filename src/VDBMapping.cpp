@@ -115,7 +115,7 @@ bool VDBMapping::insertPointCloud(const PointCloudT::ConstPtr& cloud,
       // The main idea of the dot product is to first get the center of the current voxel and then
       // add half the ray direction to gain the outer boundary of this voxel
       signed_distance =
-        ray_length - ray_direction.dot(x + m_resolution / 2.0 + ray_direction / 2.0);
+        ray_length - ray_direction.dot(x + 0.5 + ray_direction / 2.0);
       if (signed_distance >= 0)
       {
         temp_acc.setActiveState(dda.voxel(), true);

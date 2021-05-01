@@ -29,7 +29,8 @@ TEST(Mapping, SetConfig)
 
 TEST(Mapping, InsertPositivePoint)
 {
-  VDBMapping map(1);
+  double resolution = 0.1;
+  VDBMapping map(resolution);
   VDBMapping::Config conf;
   conf.max_range      = 10;
   conf.prob_hit       = 0.9;
@@ -42,7 +43,7 @@ TEST(Mapping, InsertPositivePoint)
   float log_miss = log(conf.prob_miss) - log(1 - conf.prob_miss);
 
   VDBMapping::PointCloudT::Ptr cloud(new VDBMapping::PointCloudT);
-  cloud->points.push_back(VDBMapping::PointT(0, 0, 5));
+  cloud->points.push_back(VDBMapping::PointT(0, 0, 5 * resolution));
   Eigen::Matrix<double, 3, 1> origin(0, 0, 0);
   map.insertPointCloud(cloud, origin);
   VDBMapping::GridT::Accessor acc = map.getMap()->getAccessor();
@@ -59,7 +60,8 @@ TEST(Mapping, InsertPositivePoint)
 
 TEST(Mapping, InsertNegativePoint)
 {
-  VDBMapping map(1);
+  double resolution = 0.1;
+  VDBMapping map(resolution);
   VDBMapping::Config conf;
   conf.max_range      = 10;
   conf.prob_hit       = 0.9;
@@ -72,7 +74,7 @@ TEST(Mapping, InsertNegativePoint)
   float log_miss = log(conf.prob_miss) - log(1 - conf.prob_miss);
 
   VDBMapping::PointCloudT::Ptr cloud(new VDBMapping::PointCloudT);
-  cloud->points.push_back(VDBMapping::PointT(0, 0, -5));
+  cloud->points.push_back(VDBMapping::PointT(0, 0, -5 * resolution));
   Eigen::Matrix<double, 3, 1> origin(0, 0, 0);
   map.insertPointCloud(cloud, origin);
   VDBMapping::GridT::Accessor acc = map.getMap()->getAccessor();
@@ -89,9 +91,10 @@ TEST(Mapping, InsertNegativePoint)
 
 TEST(Mapping, InsertMaxRangePoint)
 {
-  VDBMapping map(1);
+  double resolution = 0.1;
+  VDBMapping map(resolution);
   VDBMapping::Config conf;
-  conf.max_range      = 5;
+  conf.max_range      = 0.5;
   conf.prob_hit       = 0.9;
   conf.prob_miss      = 0.1;
   conf.prob_thres_max = 0.51;
@@ -101,7 +104,7 @@ TEST(Mapping, InsertMaxRangePoint)
   float log_miss = log(conf.prob_miss) - log(1 - conf.prob_miss);
 
   VDBMapping::PointCloudT::Ptr cloud(new VDBMapping::PointCloudT);
-  cloud->points.push_back(VDBMapping::PointT(0, 0, 7));
+  cloud->points.push_back(VDBMapping::PointT(0, 0, 7 * resolution));
   Eigen::Matrix<double, 3, 1> origin(0, 0, 0);
   map.insertPointCloud(cloud, origin);
   VDBMapping::GridT::Accessor acc = map.getMap()->getAccessor();
