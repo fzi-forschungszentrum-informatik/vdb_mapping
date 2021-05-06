@@ -57,7 +57,8 @@ public:
   void setConfig(const Config confiig);
 
 protected:
-  bool updateNode(openvdb::FloatGrid::Ptr& temp_grid) override;
+  bool updateFreeNode(float& voxel_value, bool& active) override;
+  bool updateOccupiedNode(float& voxel_value, bool& active) override;
 
   /*!
    * \brief Probability update value for passing an obstacle

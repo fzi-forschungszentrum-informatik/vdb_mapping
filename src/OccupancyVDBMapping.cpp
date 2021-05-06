@@ -29,42 +29,22 @@
 
 #include "vdb_mapping/OccupancyVDBMapping.h"
 
-
-bool OccupancyVDBMapping::updateNode(openvdb::FloatGrid::Ptr& temp_grid)
+bool OccupancyVDBMapping::updateFreeNode(float& voxel_value, bool& active)
 {
-  typename GridT::Accessor acc = m_vdb_grid->getAccessor();
-  // Probability update lambda for free space grid elements
-  auto miss = [& prob_miss     = m_logodds_miss,
-               &prob_thres_min = m_logodds_thres_min](float& voxel_value, bool& active) {
-    voxel_value += prob_miss;
-    if (voxel_value < prob_thres_min)
-    {
-      active = false;
-    }
-  };
-
-  // Probability update lambda for occupied grid elements
-  auto hit = [& prob_hit = m_logodds_hit, &prob_thres_max = m_logodds_thres_max](float& voxel_value,
-                                                                                 bool& active) {
-    voxel_value += prob_hit;
-    if (voxel_value > prob_thres_max)
-    {
-      active = true;
-    }
-  };
-
-  // Integrating the data of the temporary grid into the map using the probability update functions
-  // for (typename GridT::ValueOnCIter iter = temp_grid->cbeginValueOn(); iter; ++iter)
-  for (typename openvdb::FloatGrid::ValueOnCIter iter = temp_grid->cbeginValueOn(); iter; ++iter)
+  voxel_value += m_logodds_miss;
+  if (voxel_value < m_logodds_thres_min)
   {
-    if (*iter == -1)
-    {
-      acc.modifyValueAndActiveState(iter.getCoord(), hit);
-    }
-    else
-    {
-      acc.modifyValueAndActiveState(iter.getCoord(), miss);
-    }
+    active = false;
+  }
+  return true;
+}
+
+bool OccupancyVDBMapping::updateOccupiedNode(float& voxel_value, bool& active)
+{
+  voxel_value += m_logodds_hit;
+  if (voxel_value > m_logodds_thres_max)
+  {
+    active = true;
   }
   return true;
 }

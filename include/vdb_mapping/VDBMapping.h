@@ -122,7 +122,8 @@ public:
 
 
 protected:
-  virtual bool updateNode(openvdb::FloatGrid::Ptr& temp_grid) { return false; }
+  virtual bool updateFreeNode(T& voxel_value, bool& active) { return false; }
+  virtual bool updateOccupiedNode(T& voxel_value, bool& active) { return false; }
   /*!
    * \brief VDB grid pointer
    */

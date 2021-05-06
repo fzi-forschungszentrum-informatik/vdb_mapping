@@ -120,8 +120,7 @@ bool VDBMapping<T>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
       // resolution!!!)
       // The main idea of the dot product is to first get the center of the current voxel and then
       // add half the ray direction to gain the outer boundary of this voxel
-      signed_distance =
-        ray_length - ray_direction.dot(x + 0.5 + ray_direction / 2.0);
+      signed_distance = ray_length - ray_direction.dot(x + 0.5 + ray_direction / 2.0);
       if (signed_distance >= 0)
       {
         temp_acc.setActiveState(dda.voxel(), true);
@@ -139,7 +138,27 @@ bool VDBMapping<T>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
     }
   }
 
-  return updateNode(temp_grid);
+  typename GridT::Accessor acc = m_vdb_grid->getAccessor();
+  // Probability update lambda for free space grid elements
+  auto miss = [this](T& voxel_value, bool& active) { updateFreeNode(voxel_value, active); };
+
+  // Probability update lambda for occupied grid elements
+  auto hit = [this](T& voxel_value, bool& active) { updateOccupiedNode(voxel_value, active); };
+
+  // Integrating the data of the temporary grid into the map using the probability update functions
+  // for (typename GridT::ValueOnCIter iter = temp_grid->cbeginValueOn(); iter; ++iter)
+  for (typename openvdb::FloatGrid::ValueOnCIter iter = temp_grid->cbeginValueOn(); iter; ++iter)
+  {
+    if (*iter == -1)
+    {
+      acc.modifyValueAndActiveState(iter.getCoord(), hit);
+    }
+    else
+    {
+      acc.modifyValueAndActiveState(iter.getCoord(), miss);
+    }
+  }
+  return true;
 }
 
 
