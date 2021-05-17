@@ -30,7 +30,7 @@
 #include <iostream>
 
 
-template <class DataT, class ConfigT>
+template <typename DataT, typename ConfigT>
 VDBMapping<DataT, ConfigT>::VDBMapping(const double resolution)
   : m_resolution(resolution)
   , m_config_set(false)
@@ -39,14 +39,14 @@ VDBMapping<DataT, ConfigT>::VDBMapping(const double resolution)
   m_vdb_grid = createVDBMap(m_resolution);
 }
 
-template <class DataT, class ConfigT>
+template <typename DataT, typename ConfigT>
 void VDBMapping<DataT, ConfigT>::resetMap()
 {
   m_vdb_grid->clear();
   m_vdb_grid = createVDBMap(m_resolution);
 }
 
-template <class DataT, class ConfigT>
+template <typename DataT, typename ConfigT>
 typename VDBMapping<DataT, ConfigT>::GridT::Ptr
 VDBMapping<DataT, ConfigT>::createVDBMap(double resolution)
 {
@@ -56,7 +56,7 @@ VDBMapping<DataT, ConfigT>::createVDBMap(double resolution)
   return new_map;
 }
 
-template <class DataT, class ConfigT>
+template <typename DataT, typename ConfigT>
 bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
                                                   const Eigen::Matrix<double, 3, 1>& origin)
 {
@@ -163,7 +163,7 @@ bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& c
 }
 
 
-template <class DataT, class ConfigT>
+template <typename DataT, typename ConfigT>
 void VDBMapping<DataT, ConfigT>::setConfig(const ConfigT& config)
 {
   if (config.max_range < 0.0)
