@@ -147,8 +147,7 @@ bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& c
   auto hit = [this](DataT& voxel_value, bool& active) { updateOccupiedNode(voxel_value, active); };
 
   // Integrating the data of the temporary grid into the map using the probability update functions
-  // for (typename GridT::ValueOnCIter iter = temp_grid->cbeginValueOn(); iter; ++iter)
-  for (typename openvdb::FloatGrid::ValueOnCIter iter = temp_grid->cbeginValueOn(); iter; ++iter)
+  for (openvdb::FloatGrid::ValueOnCIter iter = temp_grid->cbeginValueOn(); iter; ++iter)
   {
     if (*iter == -1)
     {
