@@ -50,7 +50,7 @@ template <typename DataT, typename ConfigT>
 typename VDBMapping<DataT, ConfigT>::GridT::Ptr
 VDBMapping<DataT, ConfigT>::createVDBMap(double resolution)
 {
-  typename GridT::Ptr new_map = GridT::create(0.0);
+  typename GridT::Ptr new_map = GridT::create(DataT());
   new_map->setTransform(openvdb::math::Transform::createLinearTransform(m_resolution));
   new_map->setGridClass(openvdb::GRID_LEVEL_SET);
   return new_map;
