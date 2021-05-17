@@ -20,6 +20,7 @@
 /*!\file
  *
  * \author  Marvin Große Besselmann grosse@fzi.de
+ * \author  Lennart Puck puck@fzi.de
  * \date    2020-12-23
  *
  */
@@ -38,10 +39,19 @@
 #include <openvdb/openvdb.h>
 #include <openvdb/tools/Morphology.h>
 
+namespace vdb_mapping {
 
+/*!
+ * \brief Accumulation of configuration parameters
+ */
+struct BaseConfig
+{
+  double max_range;
+};
 /*!
  * \brief Main Mapping class which handles all data integration
  */
+template <typename DataT, typename ConfigT = BaseConfig>
 class VDBMapping
 {
 public:
@@ -52,19 +62,8 @@ public:
   using Vec3T = RayT::Vec3Type;
   using DDAT  = openvdb::math::DDA<RayT, 0>;
 
-  using GridT = openvdb::FloatGrid;
+  using GridT = openvdb::Grid<typename openvdb::tree::Tree4<DataT, 5, 4, 3>::Type>;
 
-  /*!
-   * \brief Accumulation of configuration parameters
-   */
-  struct Config
-  {
-    double max_range;
-    double prob_hit;
-    double prob_miss;
-    double prob_thres_min;
-    double prob_thres_max;
-  };
 
   VDBMapping()                  = delete;
   VDBMapping(const VDBMapping&) = delete;
@@ -85,7 +84,7 @@ public:
    *
    * \returns Grid shared pointer
    */
-  GridT::Ptr createVDBMap(double resolution);
+  typename GridT::Ptr createVDBMap(double resolution);
 
   /*!
    * \brief Reset the current map
@@ -109,21 +108,23 @@ public:
    *
    * \returns Map pointer
    */
-  GridT::Ptr getMap() const { return m_vdb_grid; }
+  typename GridT::Ptr getMap() const { return m_vdb_grid; }
 
   /*!
    * \brief Handles changing the mapping config
    *
    * \param config Configuration structure
    */
-  void setConfig(const Config config);
+  virtual void setConfig(const ConfigT& config);
 
 
-private:
+protected:
+  virtual bool updateFreeNode(DataT& voxel_value, bool& active) { return false; }
+  virtual bool updateOccupiedNode(DataT& voxel_value, bool& active) { return false; }
   /*!
    * \brief VDB grid pointer
    */
-  GridT::Ptr m_vdb_grid;
+  typename GridT::Ptr m_vdb_grid;
   /*!
    * \brief Maximum raycasting distance
    */
@@ -133,25 +134,13 @@ private:
    */
   double m_resolution;
   /*!
-   * \brief Probability update value for passing an obstacle
-   */
-  double m_logodds_hit;
-  /*!
-   * \brief Probability update value for passing free space
-   */
-  double m_logodds_miss;
-  /*!
-   * \brief Upper occupancy probability threshold
-   */
-  double m_logodds_thres_min;
-  /*!
-   * \brief Lower occupancy probability threshold
-   */
-  double m_logodds_thres_max;
-  /*!
    * \brief Flag checking wether a valid config was already loaded
    */
   bool m_config_set;
 };
+
+#include "VDBMapping.hpp"
+
+} // namespace vdb_mapping
 
 #endif /* VDB_MAPPING_VDB_MAPPING_H_INCLUDED */

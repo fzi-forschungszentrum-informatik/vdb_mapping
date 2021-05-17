@@ -40,8 +40,8 @@ ADD_CLANGTIDY_TARGET(${PROJECT_NAME})
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME} SHARED
-  src/VDBMapping.cpp
-)
+  src/OccupancyVDBMapping.cpp 
+  )
 
 target_compile_options(${PROJECT_NAME} PUBLIC ${CXX14_FLAG})
 
@@ -103,6 +103,7 @@ install(
    DESTINATION include/${PROJECT_NAME}
    FILES_MATCHING
    PATTERN "*.h"
+   PATTERN "*.hpp"
  )
 
 include(CMakePackageConfigHelpers)
