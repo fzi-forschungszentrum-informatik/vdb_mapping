@@ -41,9 +41,16 @@
 
 
 /*!
+ * \brief Accumulation of configuration parameters
+ */
+struct BaseConfig
+{
+  double max_range;
+};
+/*!
  * \brief Main Mapping class which handles all data integration
  */
-template <typename T = float>
+template <typename T, typename U = BaseConfig>
 class VDBMapping
 {
 public:
@@ -56,17 +63,6 @@ public:
 
   using GridT = openvdb::Grid<typename openvdb::tree::Tree4<T, 5, 4, 3>::Type>;
 
-  /*!
-   * \brief Accumulation of configuration parameters
-   */
-  struct BaseConfig
-  {
-    double max_range;
-    double prob_hit;
-    double prob_miss;
-    double prob_thres_min;
-    double prob_thres_max;
-  };
 
   VDBMapping()                  = delete;
   VDBMapping(const VDBMapping&) = delete;
@@ -118,7 +114,7 @@ public:
    *
    * \param config Configuration structure
    */
-  void setConfig(const BaseConfig config);
+  virtual void setConfig(const U& config);
 
 
 protected:

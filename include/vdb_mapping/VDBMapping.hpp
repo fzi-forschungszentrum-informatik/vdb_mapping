@@ -30,8 +30,8 @@
 #include <iostream>
 
 
-template <class T>
-VDBMapping<T>::VDBMapping(const double resolution)
+template <class T, class U>
+VDBMapping<T, U>::VDBMapping(const double resolution)
   : m_resolution(resolution)
   , m_config_set(false)
 {
@@ -39,15 +39,15 @@ VDBMapping<T>::VDBMapping(const double resolution)
   m_vdb_grid = createVDBMap(m_resolution);
 }
 
-template <class T>
-void VDBMapping<T>::resetMap()
+template <class T, class U>
+void VDBMapping<T, U>::resetMap()
 {
   m_vdb_grid->clear();
   m_vdb_grid = createVDBMap(m_resolution);
 }
 
-template <class T>
-typename VDBMapping<T>::GridT::Ptr VDBMapping<T>::createVDBMap(double resolution)
+template <class T, class U>
+typename VDBMapping<T, U>::GridT::Ptr VDBMapping<T, U>::createVDBMap(double resolution)
 {
   typename GridT::Ptr new_map = GridT::create(0.0);
   new_map->setTransform(openvdb::math::Transform::createLinearTransform(m_resolution));
@@ -55,9 +55,9 @@ typename VDBMapping<T>::GridT::Ptr VDBMapping<T>::createVDBMap(double resolution
   return new_map;
 }
 
-template <class T>
-bool VDBMapping<T>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
-                                     const Eigen::Matrix<double, 3, 1>& origin)
+template <class T, class U>
+bool VDBMapping<T, U>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
+                                        const Eigen::Matrix<double, 3, 1>& origin)
 {
   // Check if a valid configuration was loaded
   if (!m_config_set)
@@ -162,13 +162,13 @@ bool VDBMapping<T>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
 }
 
 
-template <class T>
-void VDBMapping<T>::setConfig(const BaseConfig config)
+template <class T, class U>
+void VDBMapping<T, U>::setConfig(const U& config)
 {
   if (config.max_range < 0.0)
   {
     std::cerr << "Max range of " << config.max_range << " invalid. Range cannot be negative."
-              << config.prob_miss << std::endl;
+              << std::endl;
     return;
   }
   m_max_range  = config.max_range;

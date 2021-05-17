@@ -50,7 +50,7 @@ bool OccupancyVDBMapping::updateOccupiedNode(float& voxel_value, bool& active)
 }
 
 
-void OccupancyVDBMapping::setConfig(const Config config)
+void OccupancyVDBMapping::setConfig(const Config& config)
 {
   // Sanity Check for input config
   if (config.prob_miss > 0.5)

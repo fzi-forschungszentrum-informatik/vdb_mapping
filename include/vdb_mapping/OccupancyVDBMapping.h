@@ -30,22 +30,22 @@
 
 #include "vdb_mapping/VDBMapping.h"
 
-class OccupancyVDBMapping : public VDBMapping<float>
+/*!
+ * \brief Accumulation of configuration parameters
+ */
+struct Config : BaseConfig
+{
+  double prob_hit;
+  double prob_miss;
+  double prob_thres_min;
+  double prob_thres_max;
+};
+
+class OccupancyVDBMapping : public VDBMapping<float, Config>
 {
 public:
-  /*!
-   * \brief Accumulation of configuration parameters
-   */
-  struct Config : BaseConfig
-  {
-    double prob_hit;
-    double prob_miss;
-    double prob_thres_min;
-    double prob_thres_max;
-  };
-
   OccupancyVDBMapping(const double resolution)
-    : VDBMapping<float>(resolution)
+    : VDBMapping<float, Config>(resolution)
   {
   }
 
@@ -54,7 +54,7 @@ public:
    *
    * \param config Configuration structure
    */
-  void setConfig(const Config confiig);
+  void setConfig(const Config& config) override;
 
 protected:
   bool updateFreeNode(float& voxel_value, bool& active) override;
