@@ -30,6 +30,8 @@
 
 #include "vdb_mapping/VDBMapping.h"
 
+namespace vdb_mapping {
+
 /*!
  * \brief Accumulation of configuration parameters
  */
@@ -77,5 +79,7 @@ protected:
    */
   double m_logodds_thres_max;
 };
+
+} // namespace vdb_mapping
 
 #endif /* VDB_MAPPING_OCCUPANCY_VDB_MAPPING_H_INCLUDED */

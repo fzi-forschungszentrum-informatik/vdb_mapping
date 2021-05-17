@@ -29,6 +29,8 @@
 
 #include "vdb_mapping/OccupancyVDBMapping.h"
 
+namespace vdb_mapping {
+
 bool OccupancyVDBMapping::updateFreeNode(float& voxel_value, bool& active)
 {
   voxel_value += m_logodds_miss;
@@ -80,3 +82,5 @@ void OccupancyVDBMapping::setConfig(const Config& config)
   m_logodds_thres_max = log(config.prob_thres_max) - log(1 - config.prob_thres_max);
   m_config_set        = true;
 }
+
+} // namespace vdb_mapping

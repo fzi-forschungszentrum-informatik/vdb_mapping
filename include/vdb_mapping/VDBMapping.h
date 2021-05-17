@@ -39,6 +39,7 @@
 #include <openvdb/openvdb.h>
 #include <openvdb/tools/Morphology.h>
 
+namespace vdb_mapping {
 
 /*!
  * \brief Accumulation of configuration parameters
@@ -139,5 +140,7 @@ protected:
 };
 
 #include "VDBMapping.hpp"
+
+} // namespace vdb_mapping
 
 #endif /* VDB_MAPPING_VDB_MAPPING_H_INCLUDED */
