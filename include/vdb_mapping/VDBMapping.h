@@ -51,7 +51,7 @@ struct BaseConfig
 /*!
  * \brief Main Mapping class which handles all data integration
  */
-template <typename T, typename U = BaseConfig>
+template <typename DataT, typename ConfigT = BaseConfig>
 class VDBMapping
 {
 public:
@@ -62,7 +62,7 @@ public:
   using Vec3T = RayT::Vec3Type;
   using DDAT  = openvdb::math::DDA<RayT, 0>;
 
-  using GridT = openvdb::Grid<typename openvdb::tree::Tree4<T, 5, 4, 3>::Type>;
+  using GridT = openvdb::Grid<typename openvdb::tree::Tree4<DataT, 5, 4, 3>::Type>;
 
 
   VDBMapping()                  = delete;
@@ -115,12 +115,12 @@ public:
    *
    * \param config Configuration structure
    */
-  virtual void setConfig(const U& config);
+  virtual void setConfig(const ConfigT& config);
 
 
 protected:
-  virtual bool updateFreeNode(T& voxel_value, bool& active) { return false; }
-  virtual bool updateOccupiedNode(T& voxel_value, bool& active) { return false; }
+  virtual bool updateFreeNode(DataT& voxel_value, bool& active) { return false; }
+  virtual bool updateOccupiedNode(DataT& voxel_value, bool& active) { return false; }
   /*!
    * \brief VDB grid pointer
    */

@@ -30,8 +30,8 @@
 #include <iostream>
 
 
-template <class T, class U>
-VDBMapping<T, U>::VDBMapping(const double resolution)
+template <class DataT, class ConfigT>
+VDBMapping<DataT, ConfigT>::VDBMapping(const double resolution)
   : m_resolution(resolution)
   , m_config_set(false)
 {
@@ -39,15 +39,16 @@ VDBMapping<T, U>::VDBMapping(const double resolution)
   m_vdb_grid = createVDBMap(m_resolution);
 }
 
-template <class T, class U>
-void VDBMapping<T, U>::resetMap()
+template <class DataT, class ConfigT>
+void VDBMapping<DataT, ConfigT>::resetMap()
 {
   m_vdb_grid->clear();
   m_vdb_grid = createVDBMap(m_resolution);
 }
 
-template <class T, class U>
-typename VDBMapping<T, U>::GridT::Ptr VDBMapping<T, U>::createVDBMap(double resolution)
+template <class DataT, class ConfigT>
+typename VDBMapping<DataT, ConfigT>::GridT::Ptr
+VDBMapping<DataT, ConfigT>::createVDBMap(double resolution)
 {
   typename GridT::Ptr new_map = GridT::create(0.0);
   new_map->setTransform(openvdb::math::Transform::createLinearTransform(m_resolution));
@@ -55,9 +56,9 @@ typename VDBMapping<T, U>::GridT::Ptr VDBMapping<T, U>::createVDBMap(double reso
   return new_map;
 }
 
-template <class T, class U>
-bool VDBMapping<T, U>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
-                                        const Eigen::Matrix<double, 3, 1>& origin)
+template <class DataT, class ConfigT>
+bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
+                                                  const Eigen::Matrix<double, 3, 1>& origin)
 {
   // Check if a valid configuration was loaded
   if (!m_config_set)
@@ -140,10 +141,10 @@ bool VDBMapping<T, U>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
 
   typename GridT::Accessor acc = m_vdb_grid->getAccessor();
   // Probability update lambda for free space grid elements
-  auto miss = [this](T& voxel_value, bool& active) { updateFreeNode(voxel_value, active); };
+  auto miss = [this](DataT& voxel_value, bool& active) { updateFreeNode(voxel_value, active); };
 
   // Probability update lambda for occupied grid elements
-  auto hit = [this](T& voxel_value, bool& active) { updateOccupiedNode(voxel_value, active); };
+  auto hit = [this](DataT& voxel_value, bool& active) { updateOccupiedNode(voxel_value, active); };
 
   // Integrating the data of the temporary grid into the map using the probability update functions
   // for (typename GridT::ValueOnCIter iter = temp_grid->cbeginValueOn(); iter; ++iter)
@@ -162,8 +163,8 @@ bool VDBMapping<T, U>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
 }
 
 
-template <class T, class U>
-void VDBMapping<T, U>::setConfig(const U& config)
+template <class DataT, class ConfigT>
+void VDBMapping<DataT, ConfigT>::setConfig(const ConfigT& config)
 {
   if (config.max_range < 0.0)
   {
