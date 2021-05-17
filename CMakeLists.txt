@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0.2)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules" ${CMAKE_MODULE_PATH})
 
-option(BUILDING_TESTS "Build unit tests." OFF)
+option(BUILDING_TESTS "Build unit tests." ON)
 
 project(vdb_mapping CXX)
 
@@ -71,12 +71,12 @@ add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 ##
 ## Build testing if enabled by option
 ##
-#if (BUILDING_TESTS)
-  #enable_testing()
-  #add_subdirectory(tests)
-#else()
-  #message(STATUS "Building tests disabled.")
-#endif()
+if (BUILDING_TESTS)
+  enable_testing()
+  add_subdirectory(tests)
+else()
+  message(STATUS "Building tests disabled.")
+endif()
 
 #############
 ## Install ##

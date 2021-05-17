@@ -1,19 +1,19 @@
 #include "gtest/gtest.h"
-#include <vdb_mapping/VDBMapping.h>
+#include <vdb_mapping/OccupancyVDBMapping.h>
 
-namespace {
+namespace vdb_mapping {
 
 TEST(Mapping, SetConfig)
 {
-  VDBMapping map(1);
-  VDBMapping::PointCloudT::Ptr cloud(new VDBMapping::PointCloudT);
-  cloud->points.push_back(VDBMapping::PointT(0, 0, 1));
+  OccupancyVDBMapping map(1);
+  OccupancyVDBMapping::PointCloudT::Ptr cloud(new OccupancyVDBMapping::PointCloudT);
+  cloud->points.push_back(OccupancyVDBMapping::PointT(0, 0, 1));
   Eigen::Matrix<double, 3, 1> origin(0, 0, 0);
   map.insertPointCloud(cloud, origin);
-  VDBMapping::GridT::Accessor acc = map.getMap()->getAccessor();
+  OccupancyVDBMapping::GridT::Accessor acc = map.getMap()->getAccessor();
   openvdb::Coord coord(0, 0, 1);
   EXPECT_EQ(acc.getValue(coord), 0.0);
-  VDBMapping::Config conf;
+  Config conf;
   conf.max_range      = 10;
   conf.prob_hit       = 0.9;
   conf.prob_miss      = 0.1;
@@ -30,8 +30,8 @@ TEST(Mapping, SetConfig)
 TEST(Mapping, InsertPositivePoint)
 {
   double resolution = 0.1;
-  VDBMapping map(resolution);
-  VDBMapping::Config conf;
+  OccupancyVDBMapping map(resolution);
+  Config conf;
   conf.max_range      = 10;
   conf.prob_hit       = 0.9;
   conf.prob_miss      = 0.1;
@@ -42,11 +42,11 @@ TEST(Mapping, InsertPositivePoint)
   float log_hit  = log(conf.prob_hit) - log(1 - conf.prob_hit);
   float log_miss = log(conf.prob_miss) - log(1 - conf.prob_miss);
 
-  VDBMapping::PointCloudT::Ptr cloud(new VDBMapping::PointCloudT);
-  cloud->points.push_back(VDBMapping::PointT(0, 0, 5 * resolution));
+  OccupancyVDBMapping::PointCloudT::Ptr cloud(new OccupancyVDBMapping::PointCloudT);
+  cloud->points.push_back(OccupancyVDBMapping::PointT(0, 0, 5 * resolution));
   Eigen::Matrix<double, 3, 1> origin(0, 0, 0);
   map.insertPointCloud(cloud, origin);
-  VDBMapping::GridT::Accessor acc = map.getMap()->getAccessor();
+  OccupancyVDBMapping::GridT::Accessor acc = map.getMap()->getAccessor();
   for (int i = 0; i < 5; ++i)
   {
     openvdb::Coord coord(0, 0, i);
@@ -61,8 +61,8 @@ TEST(Mapping, InsertPositivePoint)
 TEST(Mapping, InsertNegativePoint)
 {
   double resolution = 0.1;
-  VDBMapping map(resolution);
-  VDBMapping::Config conf;
+  OccupancyVDBMapping map(resolution);
+  Config conf;
   conf.max_range      = 10;
   conf.prob_hit       = 0.9;
   conf.prob_miss      = 0.1;
@@ -73,11 +73,11 @@ TEST(Mapping, InsertNegativePoint)
   float log_hit  = log(conf.prob_hit) - log(1 - conf.prob_hit);
   float log_miss = log(conf.prob_miss) - log(1 - conf.prob_miss);
 
-  VDBMapping::PointCloudT::Ptr cloud(new VDBMapping::PointCloudT);
-  cloud->points.push_back(VDBMapping::PointT(0, 0, -5 * resolution));
+  OccupancyVDBMapping::PointCloudT::Ptr cloud(new OccupancyVDBMapping::PointCloudT);
+  cloud->points.push_back(OccupancyVDBMapping::PointT(0, 0, -5 * resolution));
   Eigen::Matrix<double, 3, 1> origin(0, 0, 0);
   map.insertPointCloud(cloud, origin);
-  VDBMapping::GridT::Accessor acc = map.getMap()->getAccessor();
+  OccupancyVDBMapping::GridT::Accessor acc = map.getMap()->getAccessor();
   for (int i = 1; i < 6; ++i)
   {
     openvdb::Coord coord(0, 0, -1 * i);
@@ -92,8 +92,8 @@ TEST(Mapping, InsertNegativePoint)
 TEST(Mapping, InsertMaxRangePoint)
 {
   double resolution = 0.1;
-  VDBMapping map(resolution);
-  VDBMapping::Config conf;
+  OccupancyVDBMapping map(resolution);
+  Config conf;
   conf.max_range      = 0.5;
   conf.prob_hit       = 0.9;
   conf.prob_miss      = 0.1;
@@ -103,11 +103,11 @@ TEST(Mapping, InsertMaxRangePoint)
 
   float log_miss = log(conf.prob_miss) - log(1 - conf.prob_miss);
 
-  VDBMapping::PointCloudT::Ptr cloud(new VDBMapping::PointCloudT);
-  cloud->points.push_back(VDBMapping::PointT(0, 0, 7 * resolution));
+  OccupancyVDBMapping::PointCloudT::Ptr cloud(new OccupancyVDBMapping::PointCloudT);
+  cloud->points.push_back(OccupancyVDBMapping::PointT(0, 0, 7 * resolution));
   Eigen::Matrix<double, 3, 1> origin(0, 0, 0);
   map.insertPointCloud(cloud, origin);
-  VDBMapping::GridT::Accessor acc = map.getMap()->getAccessor();
+  OccupancyVDBMapping::GridT::Accessor acc = map.getMap()->getAccessor();
   for (int i = 0; i < 5; ++i)
   {
     openvdb::Coord coord(0, 0, i);
@@ -121,8 +121,8 @@ TEST(Mapping, InsertMaxRangePoint)
 
 TEST(Mapping, ResetMap)
 {
-  VDBMapping map(1);
-  VDBMapping::Config conf;
+  OccupancyVDBMapping map(1);
+  Config conf;
   conf.max_range      = 10;
   conf.prob_hit       = 0.9;
   conf.prob_miss      = 0.1;
@@ -132,18 +132,18 @@ TEST(Mapping, ResetMap)
 
   float log_hit = log(conf.prob_hit) - log(1 - conf.prob_hit);
 
-  VDBMapping::PointCloudT::Ptr cloud(new VDBMapping::PointCloudT);
-  cloud->points.push_back(VDBMapping::PointT(0, 0, 1));
+  OccupancyVDBMapping::PointCloudT::Ptr cloud(new OccupancyVDBMapping::PointCloudT);
+  cloud->points.push_back(OccupancyVDBMapping::PointT(0, 0, 1));
   Eigen::Matrix<double, 3, 1> origin(0, 0, 0);
   map.insertPointCloud(cloud, origin);
-  VDBMapping::GridT::Accessor acc = map.getMap()->getAccessor();
+  OccupancyVDBMapping::GridT::Accessor acc = map.getMap()->getAccessor();
   EXPECT_EQ(acc.getValue(openvdb::Coord(0, 0, 1)), log_hit);
   map.resetMap();
   acc = map.getMap()->getAccessor();
   EXPECT_EQ(acc.getValue(openvdb::Coord(0, 0, 1)), 0.0);
 }
 
-} // namespace
+} // namespace vdb_mapping
 
 int main(int argc, char** argv)
 {
