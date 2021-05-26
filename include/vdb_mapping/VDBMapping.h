@@ -103,6 +103,12 @@ public:
   bool insertPointCloud(const PointCloudT::ConstPtr& cloud,
                         const Eigen::Matrix<double, 3, 1>& origin);
 
+
+  openvdb::FloatGrid::Ptr createUpdate(const PointCloudT::ConstPtr& cloud,
+                                       const Eigen::Matrix<double, 3, 1>& origin);
+  bool updateMap(const openvdb::FloatGrid::Ptr temp_grid);
+
+
   /*!
    * \brief Returns a pointer to the VDB map structure
    *
