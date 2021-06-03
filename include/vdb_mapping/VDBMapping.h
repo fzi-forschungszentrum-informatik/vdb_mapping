@@ -103,6 +103,20 @@ public:
   bool insertPointCloud(const PointCloudT::ConstPtr& cloud,
                         const Eigen::Matrix<double, 3, 1>& origin);
 
+  /*!
+   * \brief Handles the integration of new PointCloud data into the VDB data structure.
+   * All datapoints are raycasted starting from the origin position
+   *
+   * \param cloud Input cloud in map coordinates
+   * \param origin Sensor position in map coordinates
+   * \param update_grid Update grid that was created internally while maping
+   *
+   * \returns Was the insertion of the new pointcloud successful
+   */
+  bool insertPointCloud(const PointCloudT::ConstPtr& cloud,
+                        const Eigen::Matrix<double, 3, 1>& origin,
+                        typename GridT::Ptr& update_grid);
+
 
   /*!
    * \brief Creates a grid which contains all cells which should be updated by the

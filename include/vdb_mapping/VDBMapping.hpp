@@ -62,6 +62,14 @@ bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& c
   return updateMap(createUpdate(cloud, origin));
 }
 
+template <typename DataT, typename ConfigT>
+bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
+                                                  const Eigen::Matrix<double, 3, 1>& origin,
+                                                  typename GridT::Ptr& update_grid)
+{
+  update_grid = createUpdate(cloud, origin);
+  return updateMap(update_grid);
+}
 
 template <typename DataT, typename ConfigT>
 openvdb::FloatGrid::Ptr
