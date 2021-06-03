@@ -59,14 +59,14 @@ template <typename DataT, typename ConfigT>
 bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
                                                   const Eigen::Matrix<double, 3, 1>& origin)
 {
-  return updateMap(createUpdate(cloud,origin));
+  return updateMap(createUpdate(cloud, origin));
 }
 
 
 template <typename DataT, typename ConfigT>
 openvdb::FloatGrid::Ptr
 VDBMapping<DataT, ConfigT>::createUpdate(const PointCloudT::ConstPtr& cloud,
-                                         const Eigen::Matrix<double, 3, 1>& origin)
+                                         const Eigen::Matrix<double, 3, 1>& origin) const
 {
   // Creating a temporary grid in which the new data is casted. This way we prevent the computation
   // of redundant probability updates in the actual map
@@ -92,7 +92,6 @@ VDBMapping<DataT, ConfigT>::createUpdate(const PointCloudT::ConstPtr& cloud,
   // Direction the ray is point towards
   openvdb::Vec3d ray_direction;
   bool max_range_ray;
-
 
 
   openvdb::Vec3d x;
@@ -149,10 +148,11 @@ VDBMapping<DataT, ConfigT>::createUpdate(const PointCloudT::ConstPtr& cloud,
 }
 
 template <typename DataT, typename ConfigT>
-bool VDBMapping<DataT, ConfigT>::updateMap(const openvdb::FloatGrid::Ptr temp_grid)
+bool VDBMapping<DataT, ConfigT>::updateMap(const openvdb::FloatGrid::Ptr& temp_grid)
 {
-  if(temp_grid->empty())
+  if (temp_grid->empty())
   {
+    std::cout << "Update grid is empty. Cannot integrate it into the map." << std::endl;
     return false;
   }
 

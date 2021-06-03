@@ -106,7 +106,7 @@ public:
 
   /*!
    * \brief Creates a grid which contains all cells which should be updated by the
-   * inserted pointcloud. 
+   * inserted pointcloud.
    *
    * \param cloud Input cloud in map coordinates
    * \param origin Sensor position in map coordinates
@@ -114,17 +114,17 @@ public:
    * \returns Bitmask Grid containing all cells which have to be updated
    */
   openvdb::FloatGrid::Ptr createUpdate(const PointCloudT::ConstPtr& cloud,
-                                       const Eigen::Matrix<double, 3, 1>& origin);
+                                       const Eigen::Matrix<double, 3, 1>& origin) const;
 
   /*!
-   * \brief Applies an update grid to the internal map. This will update the probabilities
-   * of all cells specified by the update grid.
+   * \brief Incorporates the information of an update grid to the internal map. This will update the
+   * probabilities of all cells specified by the update grid.
    *
    * \param temp_grid Grid containing all cells which shall be updated
    *
    * \returns Was the insertion of the pointcloud successuff
    */
-  bool updateMap(const openvdb::FloatGrid::Ptr temp_grid);
+  bool updateMap(const openvdb::FloatGrid::Ptr& temp_grid);
 
   /*!
    * \brief Returns a pointer to the VDB map structure
