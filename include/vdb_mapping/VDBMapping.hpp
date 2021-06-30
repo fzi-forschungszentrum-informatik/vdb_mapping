@@ -29,13 +29,17 @@
 
 #include <iostream>
 
-
 template <typename DataT, typename ConfigT>
 VDBMapping<DataT, ConfigT>::VDBMapping(const double resolution)
   : m_resolution(resolution)
   , m_config_set(false)
 {
   // Initialize Grid
+  openvdb::initialize();
+  if(!GridT::isRegistered())
+  {
+    GridT::registerGrid();
+  }
   m_vdb_grid = createVDBMap(m_resolution);
 }
 
@@ -60,11 +64,33 @@ template <typename DataT, typename ConfigT>
 bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
                                                   const Eigen::Matrix<double, 3, 1>& origin)
 {
+  return updateMap(createUpdate(cloud, origin));
+}
+
+template <typename DataT, typename ConfigT>
+bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
+                                                  const Eigen::Matrix<double, 3, 1>& origin,
+                                                  typename GridT::Ptr& update_grid)
+{
+  update_grid = createUpdate(cloud, origin);
+  return updateMap(update_grid);
+}
+
+template <typename DataT, typename ConfigT>
+openvdb::FloatGrid::Ptr
+VDBMapping<DataT, ConfigT>::createUpdate(const PointCloudT::ConstPtr& cloud,
+                                         const Eigen::Matrix<double, 3, 1>& origin) const
+{
+  // Creating a temporary grid in which the new data is casted. This way we prevent the computation
+  // of redundant probability updates in the actual map
+  openvdb::FloatGrid::Ptr temp_grid     = openvdb::FloatGrid::create(0.0);
+  openvdb::FloatGrid::Accessor temp_acc = temp_grid->getAccessor();
+
   // Check if a valid configuration was loaded
   if (!m_config_set)
   {
     std::cerr << "Map not properly configured. Did you call setConfig method?" << std::endl;
-    return false;
+    return temp_grid;
   }
 
   RayT ray;
@@ -80,13 +106,6 @@ bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& c
   openvdb::Vec3d ray_direction;
   bool max_range_ray;
 
-
-  // Creating a temporary grid in which the new data is casted. This way we prevent the computation
-  // of redundant probability updates in the actual map
-  // typename GridT::Ptr temp_grid     = GridT::create(0.0);
-  // typename GridT::Accessor temp_acc = temp_grid->getAccessor();
-  typename openvdb::FloatGrid::Ptr temp_grid     = openvdb::FloatGrid::create(0.0);
-  typename openvdb::FloatGrid::Accessor temp_acc = temp_grid->getAccessor();
 
   openvdb::Vec3d x;
   double ray_length;
@@ -138,6 +157,17 @@ bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& c
       }
     }
   }
+  return temp_grid;
+}
+
+template <typename DataT, typename ConfigT>
+bool VDBMapping<DataT, ConfigT>::updateMap(const openvdb::FloatGrid::Ptr& temp_grid)
+{
+  if (temp_grid->empty())
+  {
+    std::cout << "Update grid is empty. Cannot integrate it into the map." << std::endl;
+    return false;
+  }
 
   typename GridT::Accessor acc = m_vdb_grid->getAccessor();
   // Probability update lambda for free space grid elements
@@ -160,7 +190,6 @@ bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& c
   }
   return true;
 }
-
 
 template <typename DataT, typename ConfigT>
 void VDBMapping<DataT, ConfigT>::setConfig(const ConfigT& config)
