@@ -51,7 +51,7 @@ git clone https://github.com/fzi-forschungszentrum-informatik/vdb_mapping
 # install dependencies
 sudo apt update
 rosdep update
-rosdep install --from-patchs src --ignore-src -y
+rosdep install --from-paths src --ignore-src -y
 
 # build the workspace.
 catkin build
