@@ -49,6 +49,7 @@ namespace vdb_mapping {
 struct BaseConfig
 {
   double max_range;
+  std::string path;
 };
 /*!
  * \brief Main Mapping class which handles all data integration
@@ -101,7 +102,7 @@ public:
   /*!
    * \brief Loads a stored map
    */
-  bool loadMap();
+  bool loadMap(std::string file_path);
 
   /*!
    * \brief Handles the integration of new PointCloud data into the VDB data structure.
@@ -182,6 +183,10 @@ protected:
    * \brief Grid resolution of the map
    */
   double m_resolution;
+  /*!
+   * \brief path where the maps will be stored
+   */
+  std::string m_map_path;
   /*!
    * \brief Flag checking wether a valid config was already loaded
    */
