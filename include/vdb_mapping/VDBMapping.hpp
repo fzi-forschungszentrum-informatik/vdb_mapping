@@ -50,6 +50,31 @@ void VDBMapping<DataT, ConfigT>::resetMap()
   m_vdb_grid = createVDBMap(m_resolution);
 }
 
+
+template <typename DataT, typename ConfigT>
+bool VDBMapping<DataT, ConfigT>::saveMap()
+{
+  openvdb::GridPtrVec grids;
+  grids.push_back(m_vdb_grid);
+  std::ostringstream oss(std::ios_base::binary);
+  openvdb::io::Stream(oss).write(grids);
+
+
+  // TODO customize name and file path
+  std::ofstream outFile("myFile.txt");
+  outFile << oss.rdbuf();
+  outFile.close();
+
+  return false;
+}
+
+template <typename DataT, typename ConfigT>
+bool VDBMapping<DataT, ConfigT>::loadMap()
+{
+  // TODO
+  return false;
+}
+
 template <typename DataT, typename ConfigT>
 typename VDBMapping<DataT, ConfigT>::GridT::Ptr
 VDBMapping<DataT, ConfigT>::createVDBMap(double resolution)

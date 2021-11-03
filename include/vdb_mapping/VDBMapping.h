@@ -28,12 +28,16 @@
 #ifndef VDB_MAPPING_VDB_MAPPING_H_INCLUDED
 #define VDB_MAPPING_VDB_MAPPING_H_INCLUDED
 
+#include <fstream>
+#include <iostream>
+
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
 #include <eigen3/Eigen/Geometry>
 
 #include <openvdb/Types.h>
+#include <openvdb/io/Stream.h>
 #include <openvdb/math/DDA.h>
 #include <openvdb/math/Ray.h>
 #include <openvdb/openvdb.h>
@@ -90,6 +94,16 @@ public:
    * \brief Reset the current map
    */
   void resetMap();
+
+  /*!
+   * \brief Saves the current map
+   */
+  bool saveMap();
+
+  /*!
+   * \brief Loads a stored map
+   */
+  bool loadMap();
 
   /*!
    * \brief Handles the integration of new PointCloud data into the VDB data structure.
