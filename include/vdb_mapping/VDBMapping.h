@@ -28,8 +28,6 @@
 #ifndef VDB_MAPPING_VDB_MAPPING_H_INCLUDED
 #define VDB_MAPPING_VDB_MAPPING_H_INCLUDED
 
-#include <fstream>
-#include <iostream>
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>

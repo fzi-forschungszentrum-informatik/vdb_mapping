@@ -54,25 +54,32 @@ void VDBMapping<DataT, ConfigT>::resetMap()
 template <typename DataT, typename ConfigT>
 bool VDBMapping<DataT, ConfigT>::saveMap()
 {
+  openvdb::io::File fileHandle("meta.vdb");
   openvdb::GridPtrVec grids;
   grids.push_back(m_vdb_grid);
-  std::ostringstream oss(std::ios_base::binary);
-  openvdb::io::Stream(oss).write(grids);
+  fileHandle.write(grids);
+  fileHandle.close();
 
-
-  // TODO customize name and file path
-  std::ofstream outFile("myFile.txt");
-  outFile << oss.rdbuf();
-  outFile.close();
-
-  return false;
+  return true;
 }
 
 template <typename DataT, typename ConfigT>
 bool VDBMapping<DataT, ConfigT>::loadMap()
 {
-  // TODO
-  return false;
+  openvdb::io::File fileHandle("meta.vdb");
+  fileHandle.open();
+  openvdb::GridBase::Ptr baseGrid;
+  for (openvdb::io::File::NameIterator nameIter = fileHandle.beginName();
+       nameIter != fileHandle.endName();
+       ++nameIter)
+  {
+    baseGrid   = fileHandle.readGrid(nameIter.gridName());
+    m_vdb_grid = openvdb::gridPtrCast<GridT>(baseGrid);
+  }
+  fileHandle.close();
+
+
+  return true;
 }
 
 template <typename DataT, typename ConfigT>
