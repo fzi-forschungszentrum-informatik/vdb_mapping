@@ -37,6 +37,10 @@ bool OccupancyVDBMapping::updateFreeNode(float& voxel_value, bool& active)
   if (voxel_value < m_logodds_thres_min)
   {
     active = false;
+    if (voxel_value < m_min_logodds)
+    {
+      voxel_value = m_min_logodds;
+    }
   }
   return true;
 }
@@ -47,6 +51,10 @@ bool OccupancyVDBMapping::updateOccupiedNode(float& voxel_value, bool& active)
   if (voxel_value > m_logodds_thres_max)
   {
     active = true;
+    if (voxel_value > m_max_logodds)
+    {
+      voxel_value = m_max_logodds;
+    }
   }
   return true;
 }
@@ -80,7 +88,10 @@ void OccupancyVDBMapping::setConfig(const Config& config)
   m_logodds_hit       = log(config.prob_hit) - log(1 - config.prob_hit);
   m_logodds_thres_min = log(config.prob_thres_min) - log(1 - config.prob_thres_min);
   m_logodds_thres_max = log(config.prob_thres_max) - log(1 - config.prob_thres_max);
-  m_config_set        = true;
+  // Values to clamp the logodds in order to prevent non dynamic map behavior
+  m_max_logodds = log(0.99) - log(0.01);
+  m_min_logodds = log(0.01) - log(0.99);
+  m_config_set  = true;
 }
 
 } // namespace vdb_mapping
