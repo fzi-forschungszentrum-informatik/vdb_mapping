@@ -78,6 +78,14 @@ protected:
    * \brief Lower occupancy probability threshold
    */
   double m_logodds_thres_max;
+  /*!
+   * \brief Maximum clamping point for logodds
+   */
+  double m_max_logodds;
+  /*!
+   * \brief Minimum clamping point for logodds
+   */
+  double m_min_logodds;
 };
 
 } // namespace vdb_mapping

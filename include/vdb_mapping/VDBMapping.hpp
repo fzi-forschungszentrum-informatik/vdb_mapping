@@ -36,7 +36,7 @@ VDBMapping<DataT, ConfigT>::VDBMapping(const double resolution)
 {
   // Initialize Grid
   openvdb::initialize();
-  if(!GridT::isRegistered())
+  if (!GridT::isRegistered())
   {
     GridT::registerGrid();
   }
