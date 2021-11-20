@@ -32,6 +32,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
+#include <chrono>
 #include <eigen3/Eigen/Geometry>
 
 #include <openvdb/Types.h>
