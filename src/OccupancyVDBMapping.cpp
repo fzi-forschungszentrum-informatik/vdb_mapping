@@ -62,6 +62,9 @@ bool OccupancyVDBMapping::updateOccupiedNode(float& voxel_value, bool& active)
 
 void OccupancyVDBMapping::setConfig(const Config& config)
 {
+  // call base class function
+  VDBMapping::setConfig(config);
+
   // Sanity Check for input config
   if (config.prob_miss > 0.5)
   {
@@ -71,18 +74,11 @@ void OccupancyVDBMapping::setConfig(const Config& config)
   }
   if (config.prob_hit < 0.5)
   {
-    std::cerr << "Probability for a hit should be above 0.5 but is " << config.prob_miss
+    std::cerr << "Probability for a hit should be above 0.5 but is " << config.prob_hit
               << std::endl;
     return;
   }
 
-  if (config.max_range < 0.0)
-  {
-    std::cerr << "Max range of " << config.max_range << " invalid. Range cannot be negative."
-              << config.prob_miss << std::endl;
-    return;
-  }
-  m_max_range = config.max_range;
   // Store probabilities as log odds
   m_logodds_miss      = log(config.prob_miss) - log(1 - config.prob_miss);
   m_logodds_hit       = log(config.prob_hit) - log(1 - config.prob_hit);
