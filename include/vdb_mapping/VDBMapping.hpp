@@ -58,7 +58,7 @@ bool VDBMapping<DataT, ConfigT>::saveMap() const
   std::time_t now_tt = std::chrono::system_clock::to_time_t(timestamp);
   std::tm tm         = *std::localtime(&now_tt);
   std::stringstream sstime;
-  sstime << std::put_time(&tm, "%Y-%m-%d_%H:%M:%S");
+  sstime << std::put_time(&tm, "%Y-%m-%d_%H-%M-%S");
 
   std::string map_name = m_map_directory_path + sstime.str() + "_map.vdb";
   std::cout << map_name << std::endl;
