@@ -50,7 +50,7 @@ namespace vdb_mapping {
 struct BaseConfig
 {
   double max_range;
-  std::string path;
+  std::string map_directory_path;
 };
 /*!
  * \brief Main Mapping class which handles all data integration
@@ -187,7 +187,7 @@ protected:
   /*!
    * \brief path where the maps will be stored
    */
-  std::string m_map_path;
+  std::string m_map_directory_path;
   /*!
    * \brief Flag checking wether a valid config was already loaded
    */

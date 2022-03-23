@@ -60,7 +60,7 @@ bool VDBMapping<DataT, ConfigT>::saveMap()
   std::stringstream sstime;
   sstime << std::put_time(&tm, "%Y-%m-%d_%H:%M:%S");
 
-  std::string map_name = m_map_path + sstime.str() + "_map.vdb";
+  std::string map_name = m_map_directory_path + sstime.str() + "_map.vdb";
   std::cout << map_name << std::endl;
   openvdb::io::File fileHandle(map_name);
   openvdb::GridPtrVec grids;
@@ -240,7 +240,7 @@ void VDBMapping<DataT, ConfigT>::setConfig(const ConfigT& config)
               << std::endl;
     return;
   }
-  m_max_range  = config.max_range;
-  m_map_path   = config.path;
-  m_config_set = true;
+  m_max_range          = config.max_range;
+  m_map_directory_path = config.map_directory_path;
+  m_config_set         = true;
 }
