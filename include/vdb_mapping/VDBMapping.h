@@ -98,12 +98,12 @@ public:
   /*!
    * \brief Saves the current map
    */
-  bool saveMap();
+  bool saveMap() const;
 
   /*!
    * \brief Loads a stored map
    */
-  bool loadMap(std::string file_path);
+  bool loadMap(const std::string file_path);
 
   /*!
    * \brief Handles the integration of new PointCloud data into the VDB data structure.

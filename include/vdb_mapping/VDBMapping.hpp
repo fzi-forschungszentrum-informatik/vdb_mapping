@@ -52,7 +52,7 @@ void VDBMapping<DataT, ConfigT>::resetMap()
 
 
 template <typename DataT, typename ConfigT>
-bool VDBMapping<DataT, ConfigT>::saveMap()
+bool VDBMapping<DataT, ConfigT>::saveMap() const
 {
   auto timestamp     = std::chrono::system_clock::now();
   std::time_t now_tt = std::chrono::system_clock::to_time_t(timestamp);
@@ -72,7 +72,7 @@ bool VDBMapping<DataT, ConfigT>::saveMap()
 }
 
 template <typename DataT, typename ConfigT>
-bool VDBMapping<DataT, ConfigT>::loadMap(std::string file_path)
+bool VDBMapping<DataT, ConfigT>::loadMap(const std::string file_path)
 {
   openvdb::io::File fileHandle(file_path);
   fileHandle.open();
