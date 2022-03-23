@@ -81,7 +81,8 @@ bool VDBMapping<DataT, ConfigT>::loadMap(std::string file_path)
        nameIter != fileHandle.endName();
        ++nameIter)
   {
-    baseGrid   = fileHandle.readGrid(nameIter.gridName());
+    baseGrid = fileHandle.readGrid(nameIter.gridName());
+    m_vdb_grid->clear();
     m_vdb_grid = openvdb::gridPtrCast<GridT>(baseGrid);
   }
   fileHandle.close();
