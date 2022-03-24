@@ -105,7 +105,9 @@ template <typename DataT, typename ConfigT>
 bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
                                                   const Eigen::Matrix<double, 3, 1>& origin)
 {
-  return updateMap(createUpdate(cloud, origin));
+  //return updateMap(createUpdate(cloud, origin));
+  updateMap(createUpdate(cloud, origin));
+  return true;
 }
 
 template <typename DataT, typename ConfigT>
@@ -114,8 +116,16 @@ bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& c
                                                   UpdateGridT::Ptr& update_grid)
 {
   // update_grid = createUpdate(cloud, origin);
-  update_grid = raycastPointCloud(cloud, origin);
-  return updateMap(update_grid);
+
+  // update_grid = raycastPointCloud(cloud, origin);
+  // return updateMap(update_grid);
+
+  UpdateGridT::Ptr bla = pointCloudToUpdateGrid(cloud, origin);
+  update_grid          = raycastUpdateGrid(bla);
+  updateMap(update_grid);
+  //return updateMap(update_grid);
+  // return updateMap(bla);
+  return true;
 }
 
 template <typename DataT, typename ConfigT>
@@ -360,34 +370,61 @@ void VDBMapping<DataT, ConfigT>::castRayIntoGrid(openvdb::Vec3d& ray_origin_worl
 }
 
 template <typename DataT, typename ConfigT>
-bool VDBMapping<DataT, ConfigT>::updateMap(const UpdateGridT::Ptr& temp_grid)
+VDBMapping<DataT, ConfigT>::UpdateGridT::Ptr
+VDBMapping<DataT, ConfigT>::updateMap(const UpdateGridT::Ptr& temp_grid)
 {
+  UpdateGridT::Ptr change          = UpdateGridT::create(false);
+  UpdateGridT::Accessor change_acc = change->getAccessor();
   if (temp_grid->empty())
   {
     std::cout << "Update grid is empty. Cannot integrate it into the map." << std::endl;
-    return false;
+    return change;
   }
 
+  bool state_changed           = false;
   typename GridT::Accessor acc = m_vdb_grid->getAccessor();
   // Probability update lambda for free space grid elements
-  auto miss = [this](DataT& voxel_value, bool& active) { updateFreeNode(voxel_value, active); };
+  auto miss = [&](DataT& voxel_value, bool& active) {
+    bool last_state = active;
+    updateFreeNode(voxel_value, active);
+    if (last_state != active)
+    {
+      state_changed = true;
+    }
+  };
 
   // Probability update lambda for occupied grid elements
-  auto hit = [this](DataT& voxel_value, bool& active) { updateOccupiedNode(voxel_value, active); };
+  auto hit = [&](DataT& voxel_value, bool& active) {
+    bool last_state = active;
+    updateOccupiedNode(voxel_value, active);
+    if (last_state != active)
+    {
+      state_changed = true;
+    }
+  };
 
   // Integrating the data of the temporary grid into the map using the probability update functions
   for (UpdateGridT::ValueOnCIter iter = temp_grid->cbeginValueOn(); iter; ++iter)
   {
+    state_changed = false;
     if (*iter == true)
     {
       acc.modifyValueAndActiveState(iter.getCoord(), hit);
+      if (state_changed)
+      {
+        change_acc.setValueOn(iter.getCoord(), true);
+      }
     }
     else
     {
       acc.modifyValueAndActiveState(iter.getCoord(), miss);
+      if (state_changed)
+      {
+        change_acc.setActiveState(iter.getCoord(), true);
+      }
     }
   }
-  return true;
+  return change;
 }
 
 template <typename DataT, typename ConfigT>

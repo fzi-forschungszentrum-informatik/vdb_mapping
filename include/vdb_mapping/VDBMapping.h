@@ -167,7 +167,7 @@ public:
    *
    * \returns Was the insertion of the pointcloud successuff
    */
-  bool updateMap(const UpdateGridT::Ptr& temp_grid);
+  UpdateGridT::Ptr updateMap(const UpdateGridT::Ptr& temp_grid);
 
   /*!
    * \brief Returns a pointer to the VDB map structure
