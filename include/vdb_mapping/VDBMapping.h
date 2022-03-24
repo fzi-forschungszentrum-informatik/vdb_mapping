@@ -148,6 +148,9 @@ public:
 
   UpdateGridT::Ptr raycastPointCloud(const PointCloudT::ConstPtr& cloud,
                                      const Eigen::Matrix<double, 3, 1>& origin) const;
+
+  UpdateGridT::Ptr raycastUpdateGrid(const UpdateGridT::Ptr& grid) const;
+
   UpdateGridT::Ptr pointCloudToUpdateGrid(const PointCloudT::ConstPtr& cloud,
                                           const Eigen::Matrix<double, 3, 1>& origin) const;
 

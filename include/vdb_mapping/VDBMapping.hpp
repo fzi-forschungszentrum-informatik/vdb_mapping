@@ -266,6 +266,40 @@ VDBMapping<DataT, ConfigT>::pointCloudToUpdateGrid(const PointCloudT::ConstPtr& 
                         openvdb::Vec3DMetadata(openvdb::Vec3d(origin.x(), origin.y(), origin.z())));
   return temp_grid;
 }
+
+template <typename DataT, typename ConfigT>
+VDBMapping<DataT, ConfigT>::UpdateGridT::Ptr
+VDBMapping<DataT, ConfigT>::raycastUpdateGrid(const UpdateGridT::Ptr& grid) const
+{
+  UpdateGridT::Ptr temp_grid     = UpdateGridT::create(false);
+  UpdateGridT::Accessor temp_acc = temp_grid->getAccessor();
+  // Check if a valid configuration was loaded
+  if (!m_config_set)
+  {
+    std::cerr << "Map not properly configured. Did you call setConfig method?" << std::endl;
+    return temp_grid;
+  }
+
+  RayT ray;
+  DDAT dda;
+
+  // Ray origin in world coordinates
+  openvdb::Vec3d ray_origin_world = grid->metaValue<openvdb::Vec3d>("origin");
+  // Ray origin in index coordinates
+  Vec3T ray_origin_index(m_vdb_grid->worldToIndex(ray_origin_world));
+
+  // Ray end point in world coordinates
+  openvdb::Vec3d ray_end_world;
+
+  for (UpdateGridT::ValueOnCIter iter = grid->cbeginValueOn(); iter; ++iter)
+  {
+    ray_end_world = m_vdb_grid->indexToWorld(iter.getCoord());
+    castRayIntoGrid(ray_origin_world, ray_origin_index, ray_end_world, temp_acc);
+  }
+  return temp_grid;
+}
+
+
 template <typename DataT, typename ConfigT>
 void VDBMapping<DataT, ConfigT>::castRayIntoGrid(openvdb::Vec3d& ray_origin_world,
                                                  Vec3T& ray_origin_index,
