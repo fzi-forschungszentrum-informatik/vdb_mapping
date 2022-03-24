@@ -146,6 +146,13 @@ public:
   UpdateGridT::Ptr createUpdate(const PointCloudT::ConstPtr& cloud,
                                 const Eigen::Matrix<double, 3, 1>& origin) const;
 
+  UpdateGridT::Ptr raycastPointCloud(const PointCloudT::ConstPtr& cloud,
+                                     const Eigen::Matrix<double, 3, 1>& origin) const;
+  void castRayIntoGrid(openvdb::Vec3d& ray_origin_world,
+                       Vec3T& ray_origin_index,
+                       openvdb::Vec3d& ray_end_world,
+                       UpdateGridT::Accessor& update_grid_acc) const;
+
   /*!
    * \brief Incorporates the information of an update grid to the internal map. This will update the
    * probabilities of all cells specified by the update grid.
