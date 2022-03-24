@@ -70,21 +70,21 @@ bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& c
 template <typename DataT, typename ConfigT>
 bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
                                                   const Eigen::Matrix<double, 3, 1>& origin,
-                                                  typename GridT::Ptr& update_grid)
+                                                  UpdateGridT::Ptr& update_grid)
 {
   update_grid = createUpdate(cloud, origin);
   return updateMap(update_grid);
 }
 
 template <typename DataT, typename ConfigT>
-openvdb::FloatGrid::Ptr
+VDBMapping<DataT, ConfigT>::UpdateGridT::Ptr
 VDBMapping<DataT, ConfigT>::createUpdate(const PointCloudT::ConstPtr& cloud,
                                          const Eigen::Matrix<double, 3, 1>& origin) const
 {
   // Creating a temporary grid in which the new data is casted. This way we prevent the computation
   // of redundant probability updates in the actual map
-  openvdb::FloatGrid::Ptr temp_grid     = openvdb::FloatGrid::create(0.0);
-  openvdb::FloatGrid::Accessor temp_acc = temp_grid->getAccessor();
+  UpdateGridT::Ptr temp_grid     = UpdateGridT::create(false);
+  UpdateGridT::Accessor temp_acc = temp_grid->getAccessor();
 
   // Check if a valid configuration was loaded
   if (!m_config_set)
@@ -152,7 +152,7 @@ VDBMapping<DataT, ConfigT>::createUpdate(const PointCloudT::ConstPtr& cloud,
         // range
         if (!max_range_ray)
         {
-          temp_acc.setValueOn(dda.voxel(), -1);
+          temp_acc.setValueOn(dda.voxel(), true);
         }
       }
     }
@@ -161,7 +161,7 @@ VDBMapping<DataT, ConfigT>::createUpdate(const PointCloudT::ConstPtr& cloud,
 }
 
 template <typename DataT, typename ConfigT>
-bool VDBMapping<DataT, ConfigT>::updateMap(const openvdb::FloatGrid::Ptr& temp_grid)
+bool VDBMapping<DataT, ConfigT>::updateMap(const UpdateGridT::Ptr& temp_grid)
 {
   if (temp_grid->empty())
   {
@@ -177,9 +177,9 @@ bool VDBMapping<DataT, ConfigT>::updateMap(const openvdb::FloatGrid::Ptr& temp_g
   auto hit = [this](DataT& voxel_value, bool& active) { updateOccupiedNode(voxel_value, active); };
 
   // Integrating the data of the temporary grid into the map using the probability update functions
-  for (openvdb::FloatGrid::ValueOnCIter iter = temp_grid->cbeginValueOn(); iter; ++iter)
+  for (UpdateGridT::ValueOnCIter iter = temp_grid->cbeginValueOn(); iter; ++iter)
   {
-    if (*iter == -1)
+    if (*iter == true)
     {
       acc.modifyValueAndActiveState(iter.getCoord(), hit);
     }

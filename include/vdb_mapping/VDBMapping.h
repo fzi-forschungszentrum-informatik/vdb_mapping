@@ -41,6 +41,7 @@
 
 namespace vdb_mapping {
 
+
 /*!
  * \brief Accumulation of configuration parameters
  */
@@ -62,7 +63,8 @@ public:
   using Vec3T = RayT::Vec3Type;
   using DDAT  = openvdb::math::DDA<RayT, 0>;
 
-  using GridT = openvdb::Grid<typename openvdb::tree::Tree4<DataT, 5, 4, 3>::Type>;
+  using GridT       = openvdb::Grid<typename openvdb::tree::Tree4<DataT, 5, 4, 3>::Type>;
+  using UpdateGridT = openvdb::Grid<openvdb::tree::Tree4<bool, 5, 4, 3>::Type>;
 
 
   VDBMapping()                  = delete;
@@ -115,7 +117,7 @@ public:
    */
   bool insertPointCloud(const PointCloudT::ConstPtr& cloud,
                         const Eigen::Matrix<double, 3, 1>& origin,
-                        typename GridT::Ptr& update_grid);
+                        UpdateGridT::Ptr& update_grid);
 
 
   /*!
@@ -127,8 +129,8 @@ public:
    *
    * \returns Bitmask Grid containing all cells which have to be updated
    */
-  openvdb::FloatGrid::Ptr createUpdate(const PointCloudT::ConstPtr& cloud,
-                                       const Eigen::Matrix<double, 3, 1>& origin) const;
+  UpdateGridT::Ptr createUpdate(const PointCloudT::ConstPtr& cloud,
+                                const Eigen::Matrix<double, 3, 1>& origin) const;
 
   /*!
    * \brief Incorporates the information of an update grid to the internal map. This will update the
@@ -138,7 +140,7 @@ public:
    *
    * \returns Was the insertion of the pointcloud successuff
    */
-  bool updateMap(const openvdb::FloatGrid::Ptr& temp_grid);
+  bool updateMap(const UpdateGridT::Ptr& temp_grid);
 
   /*!
    * \brief Returns a pointer to the VDB map structure
