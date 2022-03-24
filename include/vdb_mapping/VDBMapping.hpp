@@ -50,6 +50,47 @@ void VDBMapping<DataT, ConfigT>::resetMap()
   m_vdb_grid = createVDBMap(m_resolution);
 }
 
+
+template <typename DataT, typename ConfigT>
+bool VDBMapping<DataT, ConfigT>::saveMap() const
+{
+  auto timestamp     = std::chrono::system_clock::now();
+  std::time_t now_tt = std::chrono::system_clock::to_time_t(timestamp);
+  std::tm tm         = *std::localtime(&now_tt);
+  std::stringstream sstime;
+  sstime << std::put_time(&tm, "%Y-%m-%d_%H-%M-%S");
+
+  std::string map_name = m_map_directory_path + sstime.str() + "_map.vdb";
+  std::cout << map_name << std::endl;
+  openvdb::io::File fileHandle(map_name);
+  openvdb::GridPtrVec grids;
+  grids.push_back(m_vdb_grid);
+  fileHandle.write(grids);
+  fileHandle.close();
+
+  return true;
+}
+
+template <typename DataT, typename ConfigT>
+bool VDBMapping<DataT, ConfigT>::loadMap(const std::string file_path)
+{
+  openvdb::io::File fileHandle(file_path);
+  fileHandle.open();
+  openvdb::GridBase::Ptr baseGrid;
+  for (openvdb::io::File::NameIterator nameIter = fileHandle.beginName();
+       nameIter != fileHandle.endName();
+       ++nameIter)
+  {
+    baseGrid = fileHandle.readGrid(nameIter.gridName());
+    m_vdb_grid->clear();
+    m_vdb_grid = openvdb::gridPtrCast<GridT>(baseGrid);
+  }
+  fileHandle.close();
+
+
+  return true;
+}
+
 template <typename DataT, typename ConfigT>
 typename VDBMapping<DataT, ConfigT>::GridT::Ptr
 VDBMapping<DataT, ConfigT>::createVDBMap(double resolution)
@@ -200,6 +241,7 @@ void VDBMapping<DataT, ConfigT>::setConfig(const ConfigT& config)
               << std::endl;
     return;
   }
-  m_max_range  = config.max_range;
-  m_config_set = true;
+  m_max_range          = config.max_range;
+  m_map_directory_path = config.map_directory_path;
+  m_config_set         = true;
 }

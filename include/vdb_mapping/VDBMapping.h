@@ -28,12 +28,15 @@
 #ifndef VDB_MAPPING_VDB_MAPPING_H_INCLUDED
 #define VDB_MAPPING_VDB_MAPPING_H_INCLUDED
 
+
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
+#include <chrono>
 #include <eigen3/Eigen/Geometry>
 
 #include <openvdb/Types.h>
+#include <openvdb/io/Stream.h>
 #include <openvdb/math/DDA.h>
 #include <openvdb/math/Ray.h>
 #include <openvdb/openvdb.h>
@@ -48,6 +51,7 @@ namespace vdb_mapping {
 struct BaseConfig
 {
   double max_range;
+  std::string map_directory_path;
 };
 /*!
  * \brief Main Mapping class which handles all data integration
@@ -92,6 +96,16 @@ public:
    * \brief Reset the current map
    */
   void resetMap();
+
+  /*!
+   * \brief Saves the current map
+   */
+  bool saveMap() const;
+
+  /*!
+   * \brief Loads a stored map
+   */
+  bool loadMap(const std::string file_path);
 
   /*!
    * \brief Handles the integration of new PointCloud data into the VDB data structure.
@@ -172,6 +186,10 @@ protected:
    * \brief Grid resolution of the map
    */
   double m_resolution;
+  /*!
+   * \brief path where the maps will be stored
+   */
+  std::string m_map_directory_path;
   /*!
    * \brief Flag checking wether a valid config was already loaded
    */
