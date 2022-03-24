@@ -159,6 +159,8 @@ public:
                        openvdb::Vec3d& ray_end_world,
                        UpdateGridT::Accessor& update_grid_acc) const;
 
+  void overwriteMap(const UpdateGridT::Ptr& update_grid);
+
   /*!
    * \brief Incorporates the information of an update grid to the internal map. This will update the
    * probabilities of all cells specified by the update grid.

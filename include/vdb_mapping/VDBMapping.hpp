@@ -428,6 +428,23 @@ VDBMapping<DataT, ConfigT>::updateMap(const UpdateGridT::Ptr& temp_grid)
 }
 
 template <typename DataT, typename ConfigT>
+void VDBMapping<DataT, ConfigT>::overwriteMap(const UpdateGridT::Ptr& update_grid)
+{
+  typename GridT::Accessor acc = m_vdb_grid->getAccessor();
+  for (UpdateGridT::ValueOnCIter iter = update_grid->cbeginValueOn(); iter; ++iter)
+  {
+    if(*iter == true)
+    {
+      acc.setActiveState(iter.getCoord(), true);
+    }
+    else
+    {
+      acc.setActiveState(iter.getCoord(), false);
+    }
+  }
+}
+
+template <typename DataT, typename ConfigT>
 void VDBMapping<DataT, ConfigT>::setConfig(const ConfigT& config)
 {
   if (config.max_range < 0.0)
