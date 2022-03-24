@@ -240,6 +240,33 @@ VDBMapping<DataT, ConfigT>::raycastPointCloud(const PointCloudT::ConstPtr& cloud
 }
 
 template <typename DataT, typename ConfigT>
+VDBMapping<DataT, ConfigT>::UpdateGridT::Ptr
+VDBMapping<DataT, ConfigT>::pointCloudToUpdateGrid(const PointCloudT::ConstPtr& cloud,
+                                                   const Eigen::Matrix<double, 3, 1>& origin) const
+{
+  UpdateGridT::Ptr temp_grid     = UpdateGridT::create(false);
+  UpdateGridT::Accessor temp_acc = temp_grid->getAccessor();
+  if (!m_config_set)
+  {
+    std::cerr << "Map not properly configured. Did you call setConfig method?" << std::endl;
+    return temp_grid;
+  }
+  for (const PointT& pt : *cloud)
+  {
+    openvdb::Vec3d end_world(pt.x, pt.y, pt.z);
+    openvdb::Vec3d index_buffer = m_vdb_grid->worldToIndex(end_world);
+    openvdb::Coord end_index(index_buffer.x(), index_buffer.y(), index_buffer.z());
+    temp_acc.setValueOn(end_index, true);
+  }
+
+  std::cout << "cloud: " << cloud->points.size() << std::endl;
+  std::cout << "grid " << temp_grid->tree().activeVoxelCount() << std::endl;
+
+  temp_grid->insertMeta("origin",
+                        openvdb::Vec3DMetadata(openvdb::Vec3d(origin.x(), origin.y(), origin.z())));
+  return temp_grid;
+}
+template <typename DataT, typename ConfigT>
 void VDBMapping<DataT, ConfigT>::castRayIntoGrid(openvdb::Vec3d& ray_origin_world,
                                                  Vec3T& ray_origin_index,
                                                  openvdb::Vec3d& ray_end_world,

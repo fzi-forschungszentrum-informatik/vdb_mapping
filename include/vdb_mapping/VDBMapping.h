@@ -148,6 +148,9 @@ public:
 
   UpdateGridT::Ptr raycastPointCloud(const PointCloudT::ConstPtr& cloud,
                                      const Eigen::Matrix<double, 3, 1>& origin) const;
+  UpdateGridT::Ptr pointCloudToUpdateGrid(const PointCloudT::ConstPtr& cloud,
+                                          const Eigen::Matrix<double, 3, 1>& origin) const;
+
   void castRayIntoGrid(openvdb::Vec3d& ray_origin_world,
                        Vec3T& ray_origin_index,
                        openvdb::Vec3d& ray_end_world,
