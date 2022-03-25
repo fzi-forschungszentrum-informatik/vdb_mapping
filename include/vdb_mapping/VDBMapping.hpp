@@ -118,29 +118,29 @@ bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& c
   UpdateGridT::Ptr raycast_update_grid;
 
   int level = 3;
-  switch(level)
+  switch (level)
   {
     case 0:
       update_grid = raycastPointCloud(cloud, origin);
       updateMap(update_grid);
-      std::cout << "Grid Size level 0:" << update_grid->tree().activeVoxelCount()  << std::endl;
+      std::cout << "Grid Size level 0:" << update_grid->tree().activeVoxelCount() << std::endl;
       return true;
     case 1:
-      update_grid = pointCloudToUpdateGrid(cloud, origin);
+      update_grid         = pointCloudToUpdateGrid(cloud, origin);
       raycast_update_grid = raycastUpdateGrid(update_grid);
       updateMap(raycast_update_grid);
-      std::cout << "Grid Size level 1:" << update_grid->tree().activeVoxelCount()  << std::endl;
+      std::cout << "Grid Size level 1:" << update_grid->tree().activeVoxelCount() << std::endl;
       return true;
     case 2:
       raycast_update_grid = raycastPointCloud(cloud, origin);
-      update_grid = updateMap(raycast_update_grid);
-      std::cout << "Grid Size level 2:" << update_grid->tree().activeVoxelCount()  << std::endl;
+      update_grid         = updateMap(raycast_update_grid);
+      std::cout << "Grid Size level 2:" << update_grid->tree().activeVoxelCount() << std::endl;
       return true;
     case 3:
-      update_grid = pointCloudToUpdateGrid(cloud, origin);
+      update_grid         = pointCloudToUpdateGrid(cloud, origin);
       raycast_update_grid = raycastUpdateGrid(update_grid);
-      update_grid = updateMap(raycast_update_grid);
-      std::cout << "Grid Size level 3:" << update_grid->tree().activeVoxelCount()  << std::endl;
+      update_grid         = updateMap(raycast_update_grid);
+      std::cout << "Grid Size level 3:" << update_grid->tree().activeVoxelCount() << std::endl;
       return true;
     default:
       return false;
@@ -285,9 +285,9 @@ VDBMapping<DataT, ConfigT>::pointCloudToUpdateGrid(const PointCloudT::ConstPtr& 
   for (const PointT& pt : *cloud)
   {
     openvdb::Vec3d end_world(pt.x, pt.y, pt.z);
-    if(m_max_range > 0.0 && (end_world - origin_world).length() > m_max_range)
+    if (m_max_range > 0.0 && (end_world - origin_world).length() > m_max_range)
     {
-      end_world = origin_world + (end_world-origin_world).unit() * (m_max_range + 0.1);
+      end_world = origin_world + (end_world - origin_world).unit() * (m_max_range + 0.1);
     }
     openvdb::Vec3d index_buffer = m_vdb_grid->worldToIndex(end_world);
     openvdb::Coord end_index(index_buffer.x(), index_buffer.y(), index_buffer.z());
@@ -457,7 +457,7 @@ void VDBMapping<DataT, ConfigT>::overwriteMap(const UpdateGridT::Ptr& update_gri
   typename GridT::Accessor acc = m_vdb_grid->getAccessor();
   for (UpdateGridT::ValueOnCIter iter = update_grid->cbeginValueOn(); iter; ++iter)
   {
-    if(*iter == true)
+    if (*iter == true)
     {
       acc.setActiveState(iter.getCoord(), true);
     }
