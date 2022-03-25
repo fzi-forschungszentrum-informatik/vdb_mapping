@@ -280,9 +280,15 @@ VDBMapping<DataT, ConfigT>::pointCloudToUpdateGrid(const PointCloudT::ConstPtr& 
     std::cerr << "Map not properly configured. Did you call setConfig method?" << std::endl;
     return temp_grid;
   }
+
+  openvdb::Vec3d origin_world(origin.x(), origin.y(), origin.z());
   for (const PointT& pt : *cloud)
   {
     openvdb::Vec3d end_world(pt.x, pt.y, pt.z);
+    if(m_max_range > 0.0 && (end_world - origin_world).length() > m_max_range)
+    {
+      end_world = origin_world + (end_world-origin_world).unit() * (m_max_range + 0.1);
+    }
     openvdb::Vec3d index_buffer = m_vdb_grid->worldToIndex(end_world);
     openvdb::Coord end_index(index_buffer.x(), index_buffer.y(), index_buffer.z());
     temp_acc.setValueOn(end_index, true);
@@ -291,8 +297,7 @@ VDBMapping<DataT, ConfigT>::pointCloudToUpdateGrid(const PointCloudT::ConstPtr& 
   std::cout << "cloud: " << cloud->points.size() << std::endl;
   std::cout << "grid " << temp_grid->tree().activeVoxelCount() << std::endl;
 
-  temp_grid->insertMeta("origin",
-                        openvdb::Vec3DMetadata(openvdb::Vec3d(origin.x(), origin.y(), origin.z())));
+  temp_grid->insertMeta("origin", openvdb::Vec3DMetadata(origin_world));
   return temp_grid;
 }
 
