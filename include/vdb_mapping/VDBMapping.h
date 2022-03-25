@@ -68,7 +68,7 @@ public:
   using DDAT  = openvdb::math::DDA<RayT, 0>;
 
   using GridT       = openvdb::Grid<typename openvdb::tree::Tree4<DataT, 5, 4, 3>::Type>;
-  using UpdateGridT = openvdb::Grid<openvdb::tree::Tree4<bool, 5, 4, 3>::Type>;
+  using UpdateGridT = openvdb::Grid<openvdb::tree::Tree4<bool, 1, 4, 3>::Type>;
 
 
   VDBMapping()                  = delete;
