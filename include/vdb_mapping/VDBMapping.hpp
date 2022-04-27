@@ -40,6 +40,10 @@ VDBMapping<DataT, ConfigT>::VDBMapping(const double resolution)
   {
     GridT::registerGrid();
   }
+  if(!UpdateGridT::isRegistered())
+  {
+    UpdateGridT::registerGrid();
+  }
   m_vdb_grid = createVDBMap(m_resolution);
 }
 
