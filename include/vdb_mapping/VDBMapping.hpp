@@ -40,7 +40,7 @@ VDBMapping<DataT, ConfigT>::VDBMapping(const double resolution)
   {
     GridT::registerGrid();
   }
-  if(!UpdateGridT::isRegistered())
+  if (!UpdateGridT::isRegistered())
   {
     UpdateGridT::registerGrid();
   }
@@ -127,16 +127,16 @@ bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& c
   // and send the overwrite either way
 
 
-  if(!reduce_data)
+  if (!reduce_data)
   {
-    update_grid = raycastPointCloud(cloud,origin);
+    update_grid    = raycastPointCloud(cloud, origin);
     overwrite_grid = updateMap(update_grid);
   }
   else
   {
-    update_grid = pointCloudToUpdateGrid(cloud, origin);
+    update_grid         = pointCloudToUpdateGrid(cloud, origin);
     raycast_update_grid = raycastUpdateGrid(update_grid);
-    overwrite_grid = updateMap(raycast_update_grid);
+    overwrite_grid      = updateMap(raycast_update_grid);
   }
   return true;
 }
@@ -281,7 +281,8 @@ VDBMapping<DataT, ConfigT>::pointCloudToUpdateGrid(const PointCloudT::ConstPtr& 
     openvdb::Vec3d end_world(pt.x, pt.y, pt.z);
     if (m_max_range > 0.0 && (end_world - origin_world).length() > m_max_range)
     {
-      end_world = origin_world + (end_world - origin_world).unit() * (m_max_range + 2 * m_resolution);
+      end_world =
+        origin_world + (end_world - origin_world).unit() * (m_max_range + 2 * m_resolution);
     }
     openvdb::Vec3d index_buffer = m_vdb_grid->worldToIndex(end_world);
     openvdb::Coord end_index(index_buffer.x(), index_buffer.y(), index_buffer.z());
