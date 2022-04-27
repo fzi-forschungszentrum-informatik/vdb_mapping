@@ -131,7 +131,9 @@ public:
    */
   bool insertPointCloud(const PointCloudT::ConstPtr& cloud,
                         const Eigen::Matrix<double, 3, 1>& origin,
-                        UpdateGridT::Ptr& update_grid);
+                        UpdateGridT::Ptr& update_grid,
+                        UpdateGridT::Ptr& overwrite_grid,
+                        const bool reduce_data);
 
 
   /*!

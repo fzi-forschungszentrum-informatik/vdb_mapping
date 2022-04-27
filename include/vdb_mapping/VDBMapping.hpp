@@ -117,38 +117,28 @@ bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& c
 template <typename DataT, typename ConfigT>
 bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
                                                   const Eigen::Matrix<double, 3, 1>& origin,
-                                                  UpdateGridT::Ptr& update_grid)
+                                                  UpdateGridT::Ptr& update_grid,
+                                                  UpdateGridT::Ptr& overwrite_grid,
+                                                  const bool reduce_data)
 {
   UpdateGridT::Ptr raycast_update_grid;
 
-  int level = 3;
-  switch (level)
+  // TODO change into compression on/off
+  // and send the overwrite either way
+
+
+  if(!reduce_data)
   {
-    case 0:
-      update_grid = raycastPointCloud(cloud, origin);
-      updateMap(update_grid);
-      std::cout << "Grid Size level 0:" << update_grid->tree().activeVoxelCount() << std::endl;
-      return true;
-    case 1:
-      update_grid         = pointCloudToUpdateGrid(cloud, origin);
-      raycast_update_grid = raycastUpdateGrid(update_grid);
-      updateMap(raycast_update_grid);
-      std::cout << "Grid Size level 1:" << update_grid->tree().activeVoxelCount() << std::endl;
-      return true;
-    case 2:
-      raycast_update_grid = raycastPointCloud(cloud, origin);
-      update_grid         = updateMap(raycast_update_grid);
-      std::cout << "Grid Size level 2:" << update_grid->tree().activeVoxelCount() << std::endl;
-      return true;
-    case 3:
-      update_grid         = pointCloudToUpdateGrid(cloud, origin);
-      raycast_update_grid = raycastUpdateGrid(update_grid);
-      update_grid         = updateMap(raycast_update_grid);
-      std::cout << "Grid Size level 3:" << update_grid->tree().activeVoxelCount() << std::endl;
-      return true;
-    default:
-      return false;
+    update_grid = raycastPointCloud(cloud,origin);
+    overwrite_grid = updateMap(update_grid);
   }
+  else
+  {
+    update_grid = pointCloudToUpdateGrid(cloud, origin);
+    raycast_update_grid = raycastUpdateGrid(update_grid);
+    overwrite_grid = updateMap(raycast_update_grid);
+  }
+  return true;
 }
 
 template <typename DataT, typename ConfigT>
