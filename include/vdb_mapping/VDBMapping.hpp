@@ -288,9 +288,6 @@ VDBMapping<DataT, ConfigT>::pointCloudToUpdateGrid(const PointCloudT::ConstPtr& 
     temp_acc.setValueOn(end_index, true);
   }
 
-  std::cout << "cloud: " << cloud->points.size() << std::endl;
-  std::cout << "grid " << temp_grid->tree().activeVoxelCount() << std::endl;
-
   temp_grid->insertMeta("origin", openvdb::Vec3DMetadata(origin_world));
   return temp_grid;
 }
