@@ -180,6 +180,13 @@ public:
    */
   typename GridT::Ptr getMap() const { return m_vdb_grid; }
 
+  typename UpdateGridT::Ptr getMapSection(const double min_x,
+                                          const double min_y,
+                                          const double min_z,
+                                          const double max_x,
+                                          const double max_y,
+                                          const double max_z) const;
+
   /*!
    * \brief Handles changing the mapping config
    *

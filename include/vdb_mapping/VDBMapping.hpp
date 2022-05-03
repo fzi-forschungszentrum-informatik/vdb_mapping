@@ -106,6 +106,40 @@ VDBMapping<DataT, ConfigT>::createVDBMap(double resolution)
 }
 
 template <typename DataT, typename ConfigT>
+typename VDBMapping<DataT, ConfigT>::UpdateGridT::Ptr
+VDBMapping<DataT, ConfigT>::getMapSection(const double min_x,
+                                          const double min_y,
+                                          const double min_z,
+                                          const double max_x,
+                                          const double max_y,
+                                          const double max_z) const
+{
+  typename UpdateGridT::Ptr temp_grid     = UpdateGridT::create(false);
+  typename UpdateGridT::Accessor temp_acc = temp_grid->getAccessor();
+  typename GridT::Accessor acc            = m_vdb_grid->getAccessor();
+
+  openvdb::Vec3d world_min_pt(min_x, min_y, min_z);
+  openvdb::Vec3d world_max_pt(max_x, max_y, max_z);
+  openvdb::Vec3d index_min_pt = m_vdb_grid->worldToIndex(world_min_pt);
+  openvdb::Vec3d index_max_pt = m_vdb_grid->worldToIndex(world_max_pt);
+
+
+  openvdb::CoordBBox bouding_box(index_min_pt.x(),
+                                 index_min_pt.y(),
+                                 index_min_pt.z(),
+                                 index_max_pt.x(),
+                                 index_max_pt.y(),
+                                 index_max_pt.z());
+
+
+  for (auto iter = bouding_box.begin(); iter; ++iter)
+  {
+    temp_acc.setValueOn(*iter, acc.isValueOn(*iter));
+  }
+  return temp_grid;
+}
+
+template <typename DataT, typename ConfigT>
 bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
                                                   const Eigen::Matrix<double, 3, 1>& origin)
 {
