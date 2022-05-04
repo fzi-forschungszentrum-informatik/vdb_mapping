@@ -134,7 +134,11 @@ VDBMapping<DataT, ConfigT>::getMapSection(const double min_x,
 
   for (auto iter = bouding_box.begin(); iter; ++iter)
   {
-    temp_acc.setValueOn(*iter, acc.isValueOn(*iter));
+    if(acc.isValueOn(*iter))
+    {
+      temp_acc.setValueOn(*iter, true);
+    }
+    //temp_acc.setValueOn(*iter, acc.isValueOn(*iter));
   }
   return temp_grid;
 }
