@@ -131,15 +131,14 @@ VDBMapping<DataT, ConfigT>::getMapSection(const double min_x,
                                  index_max_pt.y(),
                                  index_max_pt.z());
 
-
-  for (auto iter = bouding_box.begin(); iter; ++iter)
+  for(auto iter = m_vdb_grid->cbeginValueOn(); iter; ++iter)
   {
-    if(acc.isValueOn(*iter))
+    if(bouding_box.isInside(iter.getCoord()))
     {
-      temp_acc.setValueOn(*iter, true);
+      temp_acc.setValueOn(iter.getCoord(), true);
     }
-    //temp_acc.setValueOn(*iter, acc.isValueOn(*iter));
   }
+
   return temp_grid;
 }
 
