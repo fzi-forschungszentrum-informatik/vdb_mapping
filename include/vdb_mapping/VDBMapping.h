@@ -31,6 +31,8 @@
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include <pcl/common/transforms.h>
+#include <pcl/common/common.h>
 
 #include <chrono>
 #include <eigen3/Eigen/Geometry>
@@ -185,7 +187,8 @@ public:
                                           const double min_z,
                                           const double max_x,
                                           const double max_y,
-                                          const double max_z) const;
+                                          const double max_z,
+                                          Eigen::Matrix<double, 4, 4> map_to_reference_tf) const;
 
   /*!
    * \brief Handles changing the mapping config

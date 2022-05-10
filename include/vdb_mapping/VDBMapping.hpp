@@ -112,14 +112,28 @@ VDBMapping<DataT, ConfigT>::getMapSection(const double min_x,
                                           const double min_z,
                                           const double max_x,
                                           const double max_y,
-                                          const double max_z) const
+                                          const double max_z,
+                                          Eigen::Matrix<double, 4, 4> map_to_reference_tf) const
 {
   typename UpdateGridT::Ptr temp_grid     = UpdateGridT::create(false);
   typename UpdateGridT::Accessor temp_acc = temp_grid->getAccessor();
   typename GridT::Accessor acc            = m_vdb_grid->getAccessor();
 
-  openvdb::Vec3d world_min_pt(min_x, min_y, min_z);
-  openvdb::Vec3d world_max_pt(max_x, max_y, max_z);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr corners(new pcl::PointCloud<pcl::PointXYZ>());
+  corners->points.push_back(pcl::PointXYZ(min_x, min_y, min_z));
+  corners->points.push_back(pcl::PointXYZ(min_x, min_y, max_z));
+  corners->points.push_back(pcl::PointXYZ(min_x, max_y, min_z));
+  corners->points.push_back(pcl::PointXYZ(min_x, max_y, max_z));
+  corners->points.push_back(pcl::PointXYZ(max_x, min_y, min_z));
+  corners->points.push_back(pcl::PointXYZ(max_x, min_y, max_z));
+  corners->points.push_back(pcl::PointXYZ(max_x, max_y, min_z));
+  corners->points.push_back(pcl::PointXYZ(max_x, max_y, max_z));
+  pcl::transformPointCloud(*corners, *corners, map_to_reference_tf);
+  pcl::PointXYZ minPt, maxPt;
+  pcl::getMinMax3D(*corners, minPt, maxPt);
+
+  openvdb::Vec3d world_min_pt(minPt.x, minPt.y, minPt.z);
+  openvdb::Vec3d world_max_pt(maxPt.x, maxPt.y, maxPt.z);
   openvdb::Vec3d index_min_pt = m_vdb_grid->worldToIndex(world_min_pt);
   openvdb::Vec3d index_max_pt = m_vdb_grid->worldToIndex(world_max_pt);
 
