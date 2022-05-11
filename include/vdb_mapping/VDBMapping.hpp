@@ -145,9 +145,9 @@ VDBMapping<DataT, ConfigT>::getMapSection(const double min_x,
                                  index_max_pt.y(),
                                  index_max_pt.z());
 
-  for(auto iter = m_vdb_grid->cbeginValueOn(); iter; ++iter)
+  for (auto iter = m_vdb_grid->cbeginValueOn(); iter; ++iter)
   {
-    if(bouding_box.isInside(iter.getCoord()))
+    if (bouding_box.isInside(iter.getCoord()))
     {
       temp_acc.setValueOn(iter.getCoord(), true);
     }
