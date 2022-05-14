@@ -138,16 +138,16 @@ VDBMapping<DataT, ConfigT>::getMapSection(const double min_x,
   openvdb::Vec3d index_max_pt = m_vdb_grid->worldToIndex(world_max_pt);
 
 
-  openvdb::CoordBBox bouding_box(index_min_pt.x(),
-                                 index_min_pt.y(),
-                                 index_min_pt.z(),
-                                 index_max_pt.x(),
-                                 index_max_pt.y(),
-                                 index_max_pt.z());
+  openvdb::CoordBBox bounding_box(index_min_pt.x(),
+                                  index_min_pt.y(),
+                                  index_min_pt.z(),
+                                  index_max_pt.x(),
+                                  index_max_pt.y(),
+                                  index_max_pt.z());
 
   for (auto iter = m_vdb_grid->cbeginValueOn(); iter; ++iter)
   {
-    if (bouding_box.isInside(iter.getCoord()))
+    if (bounding_box.isInside(iter.getCoord()))
     {
       temp_acc.setValueOn(iter.getCoord(), true);
     }
@@ -157,10 +157,10 @@ VDBMapping<DataT, ConfigT>::getMapSection(const double min_x,
 }
 
 template <typename DataT, typename ConfigT>
+[[deprecated]]
 bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
                                                   const Eigen::Matrix<double, 3, 1>& origin)
 {
-  //return updateMap(createUpdate(cloud, origin));
   updateMap(createUpdate(cloud, origin));
   return true;
 }
@@ -173,10 +173,6 @@ bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& c
                                                   const bool reduce_data)
 {
   UpdateGridT::Ptr raycast_update_grid;
-
-  // TODO change into compression on/off
-  // and send the overwrite either way
-
 
   if (!reduce_data)
   {
@@ -378,8 +374,8 @@ VDBMapping<DataT, ConfigT>::raycastUpdateGrid(const UpdateGridT::Ptr& grid) cons
 
 
 template <typename DataT, typename ConfigT>
-void VDBMapping<DataT, ConfigT>::castRayIntoGrid(openvdb::Vec3d& ray_origin_world,
-                                                 Vec3T& ray_origin_index,
+void VDBMapping<DataT, ConfigT>::castRayIntoGrid(const openvdb::Vec3d& ray_origin_world,
+                                                 const Vec3T& ray_origin_index,
                                                  openvdb::Vec3d& ray_end_world,
                                                  UpdateGridT::Accessor& update_grid_acc) const
 {
