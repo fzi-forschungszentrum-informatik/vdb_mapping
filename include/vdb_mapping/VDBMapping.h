@@ -31,6 +31,8 @@
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include <pcl/common/transforms.h>
+#include <pcl/common/common.h>
 
 #include <chrono>
 #include <eigen3/Eigen/Geometry>
@@ -68,7 +70,7 @@ public:
   using DDAT  = openvdb::math::DDA<RayT, 0>;
 
   using GridT       = openvdb::Grid<typename openvdb::tree::Tree4<DataT, 5, 4, 3>::Type>;
-  using UpdateGridT = openvdb::Grid<openvdb::tree::Tree4<bool, 5, 4, 3>::Type>;
+  using UpdateGridT = openvdb::Grid<openvdb::tree::Tree4<bool, 1, 4, 3>::Type>;
 
 
   VDBMapping()                  = delete;
@@ -131,7 +133,9 @@ public:
    */
   bool insertPointCloud(const PointCloudT::ConstPtr& cloud,
                         const Eigen::Matrix<double, 3, 1>& origin,
-                        UpdateGridT::Ptr& update_grid);
+                        UpdateGridT::Ptr& update_grid,
+                        UpdateGridT::Ptr& overwrite_grid,
+                        const bool reduce_data);
 
 
   /*!
@@ -147,6 +151,58 @@ public:
                                 const Eigen::Matrix<double, 3, 1>& origin) const;
 
   /*!
+   * \brief  Raycasts a Pointcloud into an update Grid
+   *
+   * \param cloud Input sensor point cloud
+   * \param origin Origin of the sensor measurement
+   *
+   * \returns Raycasted update grid
+   */
+  UpdateGridT::Ptr raycastPointCloud(const PointCloudT::ConstPtr& cloud,
+                                     const Eigen::Matrix<double, 3, 1>& origin) const;
+
+  /*!
+   * \brief Raycasts an reduced data update Grid into full update grid
+   *
+   * \param grid Reduced data update Grid containing only the endpoints of the input sensor data
+   *
+   * \returns Full update Grid
+   */
+  UpdateGridT::Ptr raycastUpdateGrid(const UpdateGridT::Ptr& grid) const;
+
+  /*!
+   * \brief Creates a reduced data update grid from a pointcloud which only contains the
+   * endpoints of the input cloud
+   *
+   * \param cloud Input sensor point cloud
+   * \param origin Origin of the senosr measurement
+   *
+   * \returns Reduced update grid
+   */
+  UpdateGridT::Ptr pointCloudToUpdateGrid(const PointCloudT::ConstPtr& cloud,
+                                          const Eigen::Matrix<double, 3, 1>& origin) const;
+
+  /*!
+   * \brief Casts a single ray into an update grid structure
+   *
+   * \param ray_origin_world Ray origin in world coordinates
+   * \param ray_origin_index Ray origin in index coordinates
+   * \param ray_end_world Ray endpoint in world coordinates
+   * \param update_grid_acc Accessor to the update grid
+   */
+  void castRayIntoGrid(const openvdb::Vec3d& ray_origin_world,
+                       const Vec3T& ray_origin_index,
+                       openvdb::Vec3d& ray_end_world,
+                       UpdateGridT::Accessor& update_grid_acc) const;
+
+  /*!
+   * \brief Overwrites the active states of a map given an update grid
+   *
+   * \param update_grid Update Grid containing all states that changed during the last update
+   */
+  void overwriteMap(const UpdateGridT::Ptr& update_grid);
+
+  /*!
    * \brief Incorporates the information of an update grid to the internal map. This will update the
    * probabilities of all cells specified by the update grid.
    *
@@ -154,7 +210,7 @@ public:
    *
    * \returns Was the insertion of the pointcloud successuff
    */
-  bool updateMap(const UpdateGridT::Ptr& temp_grid);
+  UpdateGridT::Ptr updateMap(const UpdateGridT::Ptr& temp_grid);
 
   /*!
    * \brief Returns a pointer to the VDB map structure
@@ -162,6 +218,27 @@ public:
    * \returns Map pointer
    */
   typename GridT::Ptr getMap() const { return m_vdb_grid; }
+
+  /*!
+   * \brief Generates an update grid from the bouding box and a reference frame
+   *
+   * \param min_x Minimum x bound
+   * \param min_y Minimum y bound
+   * \param min_z Minimum z bound
+   * \param max_x Maximum x bound
+   * \param max_y Maximum y bound
+   * \param max_z Maximum z bound
+   * \param map_to_reference_tf Transform from map to reference frame
+   *
+   * \returns Update Grid
+   */
+  typename UpdateGridT::Ptr getMapSection(const double min_x,
+                                          const double min_y,
+                                          const double min_z,
+                                          const double max_x,
+                                          const double max_y,
+                                          const double max_z,
+                                          Eigen::Matrix<double, 4, 4> map_to_reference_tf) const;
 
   /*!
    * \brief Handles changing the mapping config
