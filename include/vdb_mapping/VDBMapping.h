@@ -217,7 +217,7 @@ public:
    *
    * \returns Map pointer
    */
-  typename GridT::Ptr getMap() const { return m_vdb_grid; }
+  typename GridT::Ptr getGrid() const { return m_vdb_grid; }
 
   /*!
    * \brief Generates an update grid from the bouding box and a reference frame
