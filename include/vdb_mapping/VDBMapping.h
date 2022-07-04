@@ -29,10 +29,10 @@
 #define VDB_MAPPING_VDB_MAPPING_H_INCLUDED
 
 
+#include <pcl/common/common.h>
+#include <pcl/common/transforms.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/common/transforms.h>
-#include <pcl/common/common.h>
 
 #include <chrono>
 #include <eigen3/Eigen/Geometry>
