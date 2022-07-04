@@ -29,10 +29,10 @@
 #define VDB_MAPPING_VDB_MAPPING_H_INCLUDED
 
 
+#include <pcl/common/common.h>
+#include <pcl/common/transforms.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/common/transforms.h>
-#include <pcl/common/common.h>
 
 #include <chrono>
 #include <eigen3/Eigen/Geometry>
@@ -217,7 +217,7 @@ public:
    *
    * \returns Map pointer
    */
-  typename GridT::Ptr getMap() const { return m_vdb_grid; }
+  typename GridT::Ptr getGrid() const { return m_vdb_grid; }
 
   /*!
    * \brief Generates an update grid from the bouding box and a reference frame

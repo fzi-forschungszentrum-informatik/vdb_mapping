@@ -10,7 +10,7 @@ TEST(Mapping, SetConfig)
   cloud->points.push_back(OccupancyVDBMapping::PointT(0, 0, 1));
   Eigen::Matrix<double, 3, 1> origin(0, 0, 0);
   map.insertPointCloud(cloud, origin);
-  OccupancyVDBMapping::GridT::Accessor acc = map.getMap()->getAccessor();
+  OccupancyVDBMapping::GridT::Accessor acc = map.getGrid()->getAccessor();
   openvdb::Coord coord(0, 0, 1);
   EXPECT_EQ(acc.getValue(coord), 0.0);
   Config conf;
@@ -46,7 +46,7 @@ TEST(Mapping, InsertPositivePoint)
   cloud->points.push_back(OccupancyVDBMapping::PointT(0, 0, 5 * resolution));
   Eigen::Matrix<double, 3, 1> origin(0, 0, 0);
   map.insertPointCloud(cloud, origin);
-  OccupancyVDBMapping::GridT::Accessor acc = map.getMap()->getAccessor();
+  OccupancyVDBMapping::GridT::Accessor acc = map.getGrid()->getAccessor();
   for (int i = 0; i < 5; ++i)
   {
     openvdb::Coord coord(0, 0, i);
@@ -77,7 +77,7 @@ TEST(Mapping, InsertNegativePoint)
   cloud->points.push_back(OccupancyVDBMapping::PointT(0, 0, -5 * resolution));
   Eigen::Matrix<double, 3, 1> origin(0, 0, 0);
   map.insertPointCloud(cloud, origin);
-  OccupancyVDBMapping::GridT::Accessor acc = map.getMap()->getAccessor();
+  OccupancyVDBMapping::GridT::Accessor acc = map.getGrid()->getAccessor();
   for (int i = 1; i < 6; ++i)
   {
     openvdb::Coord coord(0, 0, -1 * i);
@@ -107,7 +107,7 @@ TEST(Mapping, InsertMaxRangePoint)
   cloud->points.push_back(OccupancyVDBMapping::PointT(0, 0, 7 * resolution));
   Eigen::Matrix<double, 3, 1> origin(0, 0, 0);
   map.insertPointCloud(cloud, origin);
-  OccupancyVDBMapping::GridT::Accessor acc = map.getMap()->getAccessor();
+  OccupancyVDBMapping::GridT::Accessor acc = map.getGrid()->getAccessor();
   for (int i = 0; i < 5; ++i)
   {
     openvdb::Coord coord(0, 0, i);
@@ -136,10 +136,10 @@ TEST(Mapping, ResetMap)
   cloud->points.push_back(OccupancyVDBMapping::PointT(0, 0, 1));
   Eigen::Matrix<double, 3, 1> origin(0, 0, 0);
   map.insertPointCloud(cloud, origin);
-  OccupancyVDBMapping::GridT::Accessor acc = map.getMap()->getAccessor();
+  OccupancyVDBMapping::GridT::Accessor acc = map.getGrid()->getAccessor();
   EXPECT_EQ(acc.getValue(openvdb::Coord(0, 0, 1)), log_hit);
   map.resetMap();
-  acc = map.getMap()->getAccessor();
+  acc = map.getGrid()->getAccessor();
   EXPECT_EQ(acc.getValue(openvdb::Coord(0, 0, 1)), 0.0);
 }
 

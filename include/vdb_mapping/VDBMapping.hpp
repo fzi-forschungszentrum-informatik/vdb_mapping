@@ -157,9 +157,9 @@ VDBMapping<DataT, ConfigT>::getMapSection(const double min_x,
 }
 
 template <typename DataT, typename ConfigT>
-[[deprecated]]
-bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
-                                                  const Eigen::Matrix<double, 3, 1>& origin)
+[[deprecated]] bool
+VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
+                                             const Eigen::Matrix<double, 3, 1>& origin)
 {
   updateMap(createUpdate(cloud, origin));
   return true;
