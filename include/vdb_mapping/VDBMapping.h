@@ -138,19 +138,6 @@ public:
                         UpdateGridT::Ptr& overwrite_grid,
                         const bool reduce_data);
 
-
-  /*!
-   * \brief Creates a grid which contains all cells which should be updated by the
-   * inserted pointcloud.
-   *
-   * \param cloud Input cloud in map coordinates
-   * \param origin Sensor position in map coordinates
-   *
-   * \returns Bitmask Grid containing all cells which have to be updated
-   */
-  UpdateGridT::Ptr createUpdate(const PointCloudT::ConstPtr& cloud,
-                                const Eigen::Matrix<double, 3, 1>& origin) const;
-
   /*!
    * \brief  Raycasts a Pointcloud into an update Grid
    *
