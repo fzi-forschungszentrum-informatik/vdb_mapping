@@ -42,6 +42,7 @@
 #include <openvdb/math/DDA.h>
 #include <openvdb/math/Ray.h>
 #include <openvdb/openvdb.h>
+#include <openvdb/tools/Clip.h>
 #include <openvdb/tools/Morphology.h>
 
 namespace vdb_mapping {
@@ -220,25 +221,58 @@ public:
   typename GridT::Ptr getGrid() const { return m_vdb_grid; }
 
   /*!
+   * \brief Creates a world coordinate bounding box around a transform
+   *
+   * \param min_boundary Minimum boundary of box
+   * \param max_boundary Maximum boundary of box
+   * \param map_to_reference_tf Transform from map to reference frame
+   *
+   * \returns World coordinate bounding box
+   */
+  openvdb::BBoxd
+  createWorldBoundingBox(const Eigen::Matrix<double, 3, 1> min_boundary,
+                         const Eigen::Matrix<double, 3, 1> max_boundary,
+                         const Eigen::Matrix<double, 4, 4> map_to_reference_tf) const;
+  /*!
+   * \brief Creates an index coordinate bounding box around a transform
+   *
+   * \param min_boundary Minimum boundary of box
+   * \param max_boundary Maximum boundary of box
+   * \param map_to_reference_tf Transform from map to reference frame
+   *
+   * \returns Index coordinate bounding box
+   */
+  openvdb::CoordBBox
+  createIndexBoundingBox(const Eigen::Matrix<double, 3, 1> min_boundary,
+                         const Eigen::Matrix<double, 3, 1> max_boundary,
+                         const Eigen::Matrix<double, 4, 4> map_to_reference_tf) const;
+
+  /*!
    * \brief Generates an update grid from the bouding box and a reference frame
    *
-   * \param min_x Minimum x bound
-   * \param min_y Minimum y bound
-   * \param min_z Minimum z bound
-   * \param max_x Maximum x bound
-   * \param max_y Maximum y bound
-   * \param max_z Maximum z bound
+   * \param min_boundary Minimum boundary of box
+   * \param max_boundary Maximum boundary of box
    * \param map_to_reference_tf Transform from map to reference frame
    *
    * \returns Update Grid
    */
-  typename UpdateGridT::Ptr getMapSection(const double min_x,
-                                          const double min_y,
-                                          const double min_z,
-                                          const double max_x,
-                                          const double max_y,
-                                          const double max_z,
-                                          Eigen::Matrix<double, 4, 4> map_to_reference_tf) const;
+  typename UpdateGridT::Ptr
+  getMapOverwriteSection(const Eigen::Matrix<double, 3, 1> min_boundary,
+                         const Eigen::Matrix<double, 3, 1> max_boundary,
+                         const Eigen::Matrix<double, 4, 4> map_to_reference_tf) const;
+
+  /*!
+   * \brief Returns the specified part of the Grid as new vdb grid
+   *
+   * \param min_boundary Minimum boundary of box
+   * \param max_boundary Maximum boundary of box
+   * \param map_to_reference_tf Transform from map to reference frame
+   *
+   * \returns Update Grid
+   */
+  typename GridT::Ptr getMapSection(const Eigen::Matrix<double, 3, 1> min_boundary,
+                                    const Eigen::Matrix<double, 3, 1> max_boundary,
+                                    const Eigen::Matrix<double, 4, 4> map_to_reference_tf) const;
 
   /*!
    * \brief Handles changing the mapping config
