@@ -255,8 +255,22 @@ VDBMapping<DataT, ConfigT>::raycastPointCloud(const PointCloudT::ConstPtr& cloud
   // Raycasting of every point in the input cloud
   for (const PointT& pt : *cloud)
   {
-    ray_end_world = openvdb::Vec3d(pt.x, pt.y, pt.z);
-    castRayIntoGrid(ray_origin_world, ray_origin_index, ray_end_world, temp_acc);
+    ray_end_world      = openvdb::Vec3d(pt.x, pt.y, pt.z);
+    bool max_range_ray = false;
+
+    if (m_max_range > 0.0 && (ray_end_world - ray_origin_world).length() > m_max_range)
+    {
+      ray_end_world = ray_origin_world + (ray_end_world - ray_origin_world).unit() * m_max_range;
+      max_range_ray = true;
+    }
+
+    openvdb::Coord ray_end_index =
+      castRayIntoGrid(ray_origin_world, ray_origin_index, ray_end_world, temp_acc);
+
+    if (!max_range_ray)
+    {
+      temp_acc.setValueOn(ray_end_index, true);
+    }
   }
   return temp_grid;
 }
@@ -278,14 +292,15 @@ VDBMapping<DataT, ConfigT>::pointCloudToUpdateGrid(const PointCloudT::ConstPtr& 
   for (const PointT& pt : *cloud)
   {
     openvdb::Vec3d end_world(pt.x, pt.y, pt.z);
+    bool max_range_ray = false;
     if (m_max_range > 0.0 && (end_world - origin_world).length() > m_max_range)
     {
-      end_world =
-        origin_world + (end_world - origin_world).unit() * (m_max_range + 2 * m_resolution);
+      end_world     = origin_world + (end_world - origin_world).unit();
+      max_range_ray = true;
     }
     openvdb::Vec3d index_buffer = m_vdb_grid->worldToIndex(end_world);
     openvdb::Coord end_index(index_buffer.x(), index_buffer.y(), index_buffer.z());
-    temp_acc.setValueOn(end_index, true);
+    temp_acc.setValueOn(end_index, !max_range_ray);
   }
 
   temp_grid->insertMeta("origin", openvdb::Vec3DMetadata(origin_world));
@@ -319,17 +334,24 @@ VDBMapping<DataT, ConfigT>::raycastUpdateGrid(const UpdateGridT::Ptr& grid) cons
   for (UpdateGridT::ValueOnCIter iter = grid->cbeginValueOn(); iter; ++iter)
   {
     ray_end_world = m_vdb_grid->indexToWorld(iter.getCoord());
-    castRayIntoGrid(ray_origin_world, ray_origin_index, ray_end_world, temp_acc);
+    openvdb::Coord ray_end_index =
+      castRayIntoGrid(ray_origin_world, ray_origin_index, ray_end_world, temp_acc);
+
+    if (iter.getValue())
+    {
+      temp_acc.setValueOn(ray_end_index, true);
+    }
   }
   return temp_grid;
 }
 
 
 template <typename DataT, typename ConfigT>
-void VDBMapping<DataT, ConfigT>::castRayIntoGrid(const openvdb::Vec3d& ray_origin_world,
-                                                 const Vec3T& ray_origin_index,
-                                                 openvdb::Vec3d& ray_end_world,
-                                                 UpdateGridT::Accessor& update_grid_acc) const
+openvdb::Coord
+VDBMapping<DataT, ConfigT>::castRayIntoGrid(const openvdb::Vec3d& ray_origin_world,
+                                            const Vec3T& ray_origin_index,
+                                            const openvdb::Vec3d& ray_end_world,
+                                            UpdateGridT::Accessor& update_grid_acc) const
 {
   RayT ray;
   DDAT dda;
@@ -339,13 +361,6 @@ void VDBMapping<DataT, ConfigT>::castRayIntoGrid(const openvdb::Vec3d& ray_origi
   // TODO rename
   openvdb::Vec3d x;
   double ray_length;
-  bool max_range_ray = false;
-
-  if (m_max_range > 0.0 && (ray_end_world - ray_origin_world).length() > m_max_range)
-  {
-    ray_end_world = ray_origin_world + (ray_end_world - ray_origin_world).unit() * m_max_range;
-    max_range_ray = true;
-  }
 
   ray_direction = m_vdb_grid->worldToIndex(ray_end_world - ray_origin_world);
 
@@ -374,12 +389,7 @@ void VDBMapping<DataT, ConfigT>::castRayIntoGrid(const openvdb::Vec3d& ray_origi
     }
     else
     {
-      // Set the last passed voxel as occupied if the ray wasn't longer than the maximum raycast
-      // range
-      if (!max_range_ray)
-      {
-        update_grid_acc.setValueOn(dda.voxel(), true);
-      }
+      return dda.voxel();
     }
   }
 }
