@@ -353,35 +353,24 @@ VDBMapping<DataT, ConfigT>::castRayIntoGrid(const openvdb::Vec3d& ray_origin_wor
                                             const openvdb::Vec3d& ray_end_world,
                                             UpdateGridT::Accessor& update_grid_acc) const
 {
-  RayT ray;
-  DDAT dda;
-  // Direction the ray is point towards
-  openvdb::Vec3d ray_direction;
+  openvdb::Vec3d ray_direction = m_vdb_grid->worldToIndex(ray_end_world - ray_origin_world);
 
-  // TODO rename
-  openvdb::Vec3d x;
-  double ray_length;
+  const RayT ray(ray_origin_index, ray_direction);
+  DDAT dda(ray);
 
-  ray_direction = m_vdb_grid->worldToIndex(ray_end_world - ray_origin_world);
-
-  ray.setEye(ray_origin_index);
-  ray.setDir(ray_direction);
-  dda.init(ray);
-
-  ray_length = ray_direction.length();
+  const double ray_length = ray_direction.length();
   ray_direction.normalize();
 
-  // The signed distance is calculated for each DDA step to determine, when the endpoint is
-  // reached.
-  double signed_distance = 1;
-  while (signed_distance >= 0)
+  while (true)
   {
-    x = openvdb::Vec3d(dda.voxel().x(), dda.voxel().y(), dda.voxel().z()) - ray_origin_index;
-    // Signed distance in grid coordinates for faster processing(not scaled with the grid
-    // resolution!!!)
+    const openvdb::Vec3d x =
+      openvdb::Vec3d(dda.voxel().x(), dda.voxel().y(), dda.voxel().z()) - ray_origin_index;
+    // The signed distance is calculated for each DDA step to determine, when the endpoint is
+    // reached. It is calculated in grid coordinates for faster processing (not scaled with the
+    // grid resolution!).
     // The main idea of the dot product is to first get the center of the current voxel and then
     // add half the ray direction to gain the outer boundary of this voxel
-    signed_distance = ray_length - ray_direction.dot(x + 0.5 + ray_direction / 2.0);
+    const double signed_distance = ray_length - ray_direction.dot(x + 0.5 + ray_direction / 2.0);
     if (signed_distance >= 0)
     {
       update_grid_acc.setActiveState(dda.voxel(), true);
