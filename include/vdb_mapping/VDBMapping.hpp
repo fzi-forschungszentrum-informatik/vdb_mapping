@@ -172,7 +172,9 @@ typename ResultGridT::Ptr VDBMapping<DataT, ConfigT>::getMapSection(
   const Eigen::Matrix<double, 3, 1> max_boundary,
   const Eigen::Matrix<double, 4, 4> map_to_reference_tf) const
 {
-  typename ResultGridT::Ptr temp_grid     = ResultGridT::create(false);
+  typename ResultGridT::Ptr temp_grid = ResultGridT::create(false);
+  temp_grid->setTransform(openvdb::math::Transform::createLinearTransform(m_resolution));
+
   typename ResultGridT::Accessor temp_acc = temp_grid->getAccessor();
 
   openvdb::CoordBBox bounding_box(
