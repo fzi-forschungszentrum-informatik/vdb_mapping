@@ -144,17 +144,36 @@ openvdb::CoordBBox VDBMapping<DataT, ConfigT>::createIndexBoundingBox(
                             openvdb::Coord(max_index.x(), max_index.y(), max_index.z()));
 }
 
-
 template <typename DataT, typename ConfigT>
 typename VDBMapping<DataT, ConfigT>::UpdateGridT::Ptr
-VDBMapping<DataT, ConfigT>::getMapOverwriteSection(
+VDBMapping<DataT, ConfigT>::getMapSectionUpdateGrid(
   const Eigen::Matrix<double, 3, 1> min_boundary,
   const Eigen::Matrix<double, 3, 1> max_boundary,
   const Eigen::Matrix<double, 4, 4> map_to_reference_tf) const
 {
-  typename UpdateGridT::Ptr temp_grid     = UpdateGridT::create(false);
-  typename UpdateGridT::Accessor temp_acc = temp_grid->getAccessor();
-  typename GridT::Accessor acc            = m_vdb_grid->getAccessor();
+  return getMapSection<typename VDBMapping<DataT, ConfigT>::UpdateGridT>(
+    min_boundary, max_boundary, map_to_reference_tf);
+}
+
+template <typename DataT, typename ConfigT>
+typename VDBMapping<DataT, ConfigT>::GridT::Ptr VDBMapping<DataT, ConfigT>::getMapSectionGrid(
+  const Eigen::Matrix<double, 3, 1> min_boundary,
+  const Eigen::Matrix<double, 3, 1> max_boundary,
+  const Eigen::Matrix<double, 4, 4> map_to_reference_tf) const
+{
+  return getMapSection<typename VDBMapping<DataT, ConfigT>::GridT>(
+    min_boundary, max_boundary, map_to_reference_tf);
+}
+
+template <typename DataT, typename ConfigT>
+template <typename ResultGridT>
+typename ResultGridT::Ptr VDBMapping<DataT, ConfigT>::getMapSection(
+  const Eigen::Matrix<double, 3, 1> min_boundary,
+  const Eigen::Matrix<double, 3, 1> max_boundary,
+  const Eigen::Matrix<double, 4, 4> map_to_reference_tf) const
+{
+  typename ResultGridT::Ptr temp_grid     = ResultGridT::create(false);
+  typename ResultGridT::Accessor temp_acc = temp_grid->getAccessor();
 
   openvdb::CoordBBox bounding_box(
     createIndexBoundingBox(min_boundary, max_boundary, map_to_reference_tf));
@@ -168,17 +187,6 @@ VDBMapping<DataT, ConfigT>::getMapOverwriteSection(
   }
 
   return temp_grid;
-}
-
-template <typename DataT, typename ConfigT>
-typename VDBMapping<DataT, ConfigT>::GridT::Ptr VDBMapping<DataT, ConfigT>::getMapSection(
-  const Eigen::Matrix<double, 3, 1> min_boundary,
-  const Eigen::Matrix<double, 3, 1> max_boundary,
-  const Eigen::Matrix<double, 4, 4> map_to_reference_tf) const
-{
-  openvdb::BBoxd bounding_box =
-    createWorldBoundingBox(min_boundary, max_boundary, map_to_reference_tf);
-  return openvdb::tools::clip(*m_vdb_grid, bounding_box, true);
 }
 
 template <typename DataT, typename ConfigT>

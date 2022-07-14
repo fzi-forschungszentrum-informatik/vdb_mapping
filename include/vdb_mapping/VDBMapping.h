@@ -257,22 +257,18 @@ public:
    * \returns Update Grid
    */
   typename UpdateGridT::Ptr
-  getMapOverwriteSection(const Eigen::Matrix<double, 3, 1> min_boundary,
-                         const Eigen::Matrix<double, 3, 1> max_boundary,
-                         const Eigen::Matrix<double, 4, 4> map_to_reference_tf) const;
-
-  /*!
-   * \brief Returns the specified part of the Grid as new vdb grid
-   *
-   * \param min_boundary Minimum boundary of box
-   * \param max_boundary Maximum boundary of box
-   * \param map_to_reference_tf Transform from map to reference frame
-   *
-   * \returns Update Grid
-   */
-  typename GridT::Ptr getMapSection(const Eigen::Matrix<double, 3, 1> min_boundary,
-                                    const Eigen::Matrix<double, 3, 1> max_boundary,
-                                    const Eigen::Matrix<double, 4, 4> map_to_reference_tf) const;
+  getMapSectionUpdateGrid(const Eigen::Matrix<double, 3, 1> min_boundary,
+                          const Eigen::Matrix<double, 3, 1> max_boundary,
+                          const Eigen::Matrix<double, 4, 4> map_to_reference_tf) const;
+  typename GridT::Ptr
+  getMapSectionGrid(const Eigen::Matrix<double, 3, 1> min_boundary,
+                    const Eigen::Matrix<double, 3, 1> max_boundary,
+                    const Eigen::Matrix<double, 4, 4> map_to_reference_tf) const;
+  template <typename ResultGridT>
+  typename ResultGridT::Ptr
+  getMapSection(const Eigen::Matrix<double, 3, 1> min_boundary,
+                const Eigen::Matrix<double, 3, 1> max_boundary,
+                const Eigen::Matrix<double, 4, 4> map_to_reference_tf) const;
 
   /*!
    * \brief Handles changing the mapping config
