@@ -106,44 +106,79 @@ VDBMapping<DataT, ConfigT>::createVDBMap(double resolution)
 }
 
 template <typename DataT, typename ConfigT>
-typename VDBMapping<DataT, ConfigT>::UpdateGridT::Ptr
-VDBMapping<DataT, ConfigT>::getMapSection(const double min_x,
-                                          const double min_y,
-                                          const double min_z,
-                                          const double max_x,
-                                          const double max_y,
-                                          const double max_z,
-                                          Eigen::Matrix<double, 4, 4> map_to_reference_tf) const
+openvdb::BBoxd VDBMapping<DataT, ConfigT>::createWorldBoundingBox(
+  const Eigen::Matrix<double, 3, 1> min_boundary,
+  const Eigen::Matrix<double, 3, 1> max_boundary,
+  const Eigen::Matrix<double, 4, 4> map_to_reference_tf) const
 {
-  typename UpdateGridT::Ptr temp_grid     = UpdateGridT::create(false);
-  typename UpdateGridT::Accessor temp_acc = temp_grid->getAccessor();
-  typename GridT::Accessor acc            = m_vdb_grid->getAccessor();
-
   pcl::PointCloud<pcl::PointXYZ>::Ptr corners(new pcl::PointCloud<pcl::PointXYZ>());
-  corners->points.push_back(pcl::PointXYZ(min_x, min_y, min_z));
-  corners->points.push_back(pcl::PointXYZ(min_x, min_y, max_z));
-  corners->points.push_back(pcl::PointXYZ(min_x, max_y, min_z));
-  corners->points.push_back(pcl::PointXYZ(min_x, max_y, max_z));
-  corners->points.push_back(pcl::PointXYZ(max_x, min_y, min_z));
-  corners->points.push_back(pcl::PointXYZ(max_x, min_y, max_z));
-  corners->points.push_back(pcl::PointXYZ(max_x, max_y, min_z));
-  corners->points.push_back(pcl::PointXYZ(max_x, max_y, max_z));
+  corners->points.push_back(pcl::PointXYZ(min_boundary.x(), min_boundary.y(), min_boundary.z()));
+  corners->points.push_back(pcl::PointXYZ(min_boundary.x(), min_boundary.y(), max_boundary.z()));
+  corners->points.push_back(pcl::PointXYZ(min_boundary.x(), max_boundary.y(), min_boundary.z()));
+  corners->points.push_back(pcl::PointXYZ(min_boundary.x(), max_boundary.y(), max_boundary.z()));
+  corners->points.push_back(pcl::PointXYZ(max_boundary.x(), min_boundary.y(), min_boundary.z()));
+  corners->points.push_back(pcl::PointXYZ(max_boundary.x(), min_boundary.y(), max_boundary.z()));
+  corners->points.push_back(pcl::PointXYZ(max_boundary.x(), max_boundary.y(), min_boundary.z()));
+  corners->points.push_back(pcl::PointXYZ(max_boundary.x(), max_boundary.y(), max_boundary.z()));
   pcl::transformPointCloud(*corners, *corners, map_to_reference_tf);
-  pcl::PointXYZ minPt, maxPt;
-  pcl::getMinMax3D(*corners, minPt, maxPt);
+  pcl::PointXYZ min_pt, max_pt;
+  pcl::getMinMax3D(*corners, min_pt, max_pt);
 
-  openvdb::Vec3d world_min_pt(minPt.x, minPt.y, minPt.z);
-  openvdb::Vec3d world_max_pt(maxPt.x, maxPt.y, maxPt.z);
-  openvdb::Vec3d index_min_pt = m_vdb_grid->worldToIndex(world_min_pt);
-  openvdb::Vec3d index_max_pt = m_vdb_grid->worldToIndex(world_max_pt);
+  return openvdb::BBoxd(openvdb::Vec3d(min_pt.x, min_pt.y, min_pt.z),
+                        openvdb::Vec3d(max_pt.x, max_pt.y, max_pt.z));
+}
+
+template <typename DataT, typename ConfigT>
+openvdb::CoordBBox VDBMapping<DataT, ConfigT>::createIndexBoundingBox(
+  const Eigen::Matrix<double, 3, 1> min_boundary,
+  const Eigen::Matrix<double, 3, 1> max_boundary,
+  const Eigen::Matrix<double, 4, 4> map_to_reference_tf) const
+{
+  openvdb::BBoxd world_bb = createWorldBoundingBox(min_boundary, max_boundary, map_to_reference_tf);
 
 
-  openvdb::CoordBBox bounding_box(index_min_pt.x(),
-                                  index_min_pt.y(),
-                                  index_min_pt.z(),
-                                  index_max_pt.x(),
-                                  index_max_pt.y(),
-                                  index_max_pt.z());
+  openvdb::Vec3d min_index = m_vdb_grid->worldToIndex(world_bb.min());
+  openvdb::Vec3d max_index = m_vdb_grid->worldToIndex(world_bb.max());
+
+  return openvdb::CoordBBox(openvdb::Coord(min_index.x(), min_index.y(), min_index.z()),
+                            openvdb::Coord(max_index.x(), max_index.y(), max_index.z()));
+}
+
+template <typename DataT, typename ConfigT>
+typename VDBMapping<DataT, ConfigT>::UpdateGridT::Ptr
+VDBMapping<DataT, ConfigT>::getMapSectionUpdateGrid(
+  const Eigen::Matrix<double, 3, 1> min_boundary,
+  const Eigen::Matrix<double, 3, 1> max_boundary,
+  const Eigen::Matrix<double, 4, 4> map_to_reference_tf) const
+{
+  return getMapSection<typename VDBMapping<DataT, ConfigT>::UpdateGridT>(
+    min_boundary, max_boundary, map_to_reference_tf);
+}
+
+template <typename DataT, typename ConfigT>
+typename VDBMapping<DataT, ConfigT>::GridT::Ptr VDBMapping<DataT, ConfigT>::getMapSectionGrid(
+  const Eigen::Matrix<double, 3, 1> min_boundary,
+  const Eigen::Matrix<double, 3, 1> max_boundary,
+  const Eigen::Matrix<double, 4, 4> map_to_reference_tf) const
+{
+  return getMapSection<typename VDBMapping<DataT, ConfigT>::GridT>(
+    min_boundary, max_boundary, map_to_reference_tf);
+}
+
+template <typename DataT, typename ConfigT>
+template <typename ResultGridT>
+typename ResultGridT::Ptr VDBMapping<DataT, ConfigT>::getMapSection(
+  const Eigen::Matrix<double, 3, 1> min_boundary,
+  const Eigen::Matrix<double, 3, 1> max_boundary,
+  const Eigen::Matrix<double, 4, 4> map_to_reference_tf) const
+{
+  typename ResultGridT::Ptr temp_grid = ResultGridT::create(false);
+  temp_grid->setTransform(openvdb::math::Transform::createLinearTransform(m_resolution));
+
+  typename ResultGridT::Accessor temp_acc = temp_grid->getAccessor();
+
+  openvdb::CoordBBox bounding_box(
+    createIndexBoundingBox(min_boundary, max_boundary, map_to_reference_tf));
 
   for (auto iter = m_vdb_grid->cbeginValueOn(); iter; ++iter)
   {
