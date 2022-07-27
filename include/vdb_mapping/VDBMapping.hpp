@@ -295,7 +295,7 @@ VDBMapping<DataT, ConfigT>::pointCloudToUpdateGrid(const PointCloudT::ConstPtr& 
     bool max_range_ray = false;
     if (m_max_range > 0.0 && (end_world - origin_world).length() > m_max_range)
     {
-      end_world     = origin_world + (end_world - origin_world).unit();
+      end_world     = origin_world + (end_world - origin_world).unit() * m_max_range;
       max_range_ray = true;
     }
     openvdb::Vec3d index_buffer = m_vdb_grid->worldToIndex(end_world);
