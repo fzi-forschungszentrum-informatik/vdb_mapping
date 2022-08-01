@@ -372,7 +372,7 @@ template <typename DataT, typename ConfigT>
 bool VDBMapping<DataT, ConfigT>::raytrace(const openvdb::Vec3d& ray_origin_world,
                                           const openvdb::Vec3d& ray_direction,
                                           const double max_ray_length,
-                                          openvdb::Vec3d& trace)
+                                          openvdb::Vec3d& end_point)
 {
   typename GridT::Accessor acc    = m_vdb_grid->getAccessor();
   openvdb::Vec3d ray_origin_index = m_vdb_grid->worldToIndex(ray_origin_world);
@@ -388,10 +388,7 @@ bool VDBMapping<DataT, ConfigT>::raytrace(const openvdb::Vec3d& ray_origin_world
     {
       if (acc.isValueOn(dda.voxel()))
       {
-        trace.x() = dda.voxel().x();
-        trace.y() = dda.voxel().y();
-        trace.z() = dda.voxel().z();
-        trace = m_vdb_grid->indexToWorld(trace);
+        end_point     = m_vdb_grid->indexToWorld(dda.voxel());
         return true;
       }
       else
