@@ -353,34 +353,19 @@ VDBMapping<DataT, ConfigT>::castRayIntoGrid(const openvdb::Vec3d& ray_origin_wor
                                             const openvdb::Vec3d& ray_end_world,
                                             UpdateGridT::Accessor& update_grid_acc) const
 {
-  openvdb::Vec3d ray_direction = m_vdb_grid->worldToIndex(ray_end_world - ray_origin_world);
+  openvdb::Vec3d ray_direction = (ray_end_world - ray_origin_world);
 
   const RayT ray(ray_origin_index, ray_direction);
   DDAT dda(ray);
 
-  const double ray_length = ray_direction.length();
-  ray_direction.normalize();
+  openvdb::Coord ray_end_index = openvdb::Coord::floor(m_vdb_grid->worldToIndex(ray_end_world));
 
-  while (true)
+  while (dda.voxel() != ray_end_index)
   {
-    const openvdb::Vec3d x =
-      openvdb::Vec3d(dda.voxel().x(), dda.voxel().y(), dda.voxel().z()) - ray_origin_index;
-    // The signed distance is calculated for each DDA step to determine, when the endpoint is
-    // reached. It is calculated in grid coordinates for faster processing (not scaled with the
-    // grid resolution!).
-    // The main idea of the dot product is to first get the center of the current voxel and then
-    // add half the ray direction to gain the outer boundary of this voxel
-    const double signed_distance = ray_length - ray_direction.dot(x + 0.5 + ray_direction / 2.0);
-    if (signed_distance >= 0)
-    {
-      update_grid_acc.setActiveState(dda.voxel(), true);
-      dda.step();
-    }
-    else
-    {
-      return dda.voxel();
-    }
+    update_grid_acc.setActiveState(dda.voxel(), true);
+    dda.step();
   }
+  return dda.voxel();
 }
 
 template <typename DataT, typename ConfigT>
