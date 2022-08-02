@@ -369,6 +369,41 @@ VDBMapping<DataT, ConfigT>::castRayIntoGrid(const openvdb::Vec3d& ray_origin_wor
 }
 
 template <typename DataT, typename ConfigT>
+bool VDBMapping<DataT, ConfigT>::raytrace(const openvdb::Vec3d& ray_origin_world,
+                                          const openvdb::Vec3d& ray_direction,
+                                          const double max_ray_length,
+                                          openvdb::Vec3d& end_point)
+{
+  typename GridT::Accessor acc    = m_vdb_grid->getAccessor();
+  openvdb::Vec3d ray_origin_index = m_vdb_grid->worldToIndex(ray_origin_world);
+  const RayT ray(ray_origin_index, ray_direction);
+  DDAT dda(ray);
+  while (true)
+  {
+    const double distance =
+      m_resolution * std::sqrt(std::pow((dda.voxel().x() - ray_origin_index.x()), 2) +
+                               std::pow((dda.voxel().y() - ray_origin_index.y()), 2) +
+                               std::pow((dda.voxel().z() - ray_origin_index.z()), 2));
+    if (distance < max_ray_length)
+    {
+      if (acc.isValueOn(dda.voxel()))
+      {
+        end_point     = m_vdb_grid->indexToWorld(dda.voxel());
+        return true;
+      }
+      else
+      {
+        dda.step();
+      }
+    }
+    else
+    {
+      return false;
+    }
+  }
+}
+
+template <typename DataT, typename ConfigT>
 VDBMapping<DataT, ConfigT>::UpdateGridT::Ptr
 VDBMapping<DataT, ConfigT>::updateMap(const UpdateGridT::Ptr& temp_grid)
 {

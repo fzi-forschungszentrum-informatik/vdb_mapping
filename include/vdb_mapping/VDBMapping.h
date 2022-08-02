@@ -201,6 +201,11 @@ public:
                                  const openvdb::Vec3d& ray_end_world,
                                  UpdateGridT::Accessor& update_grid_acc) const;
 
+  bool raytrace(const openvdb::Vec3d& ray_origin_world,
+                const openvdb::Vec3d& ray_direction,
+                const double max_ray_length,
+                openvdb::Vec3d& end_point);
+
   /*!
    * \brief Overwrites the active states of a map given an update grid
    *
