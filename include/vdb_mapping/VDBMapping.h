@@ -110,6 +110,29 @@ public:
    */
   bool loadMap(const std::string file_path);
 
+
+  /*!
+   * \brief Accumulates a new sensor point cloud to the update grid
+   *
+   * \param cloud Input cloud in map coordinates
+   * \param origin Sensor position in map coordinates
+   */
+  void accumulateUpdate(const PointCloudT::ConstPtr& cloud,
+                        const Eigen::Matrix<double, 3, 1>& origin);
+
+  /*!
+   * \brief Integrates the accumulated updates into the map
+   *
+   * \param update_grid Update grid
+   * \param overwrite_grid Overwrite grid
+   */
+  void integrateUpdate(UpdateGridT::Ptr& update_grid, UpdateGridT::Ptr& overwrite_grid);
+
+  /*!
+   * \brief Resets the updates grid
+   */
+  void resetUpdate();
+
   /*!
    * \brief Handles the integration of new PointCloud data into the VDB data structure.
    * All datapoints are raycasted starting from the origin position
@@ -152,8 +175,9 @@ public:
    *
    * \returns Raycasted update grid
    */
-  UpdateGridT::Ptr raycastPointCloud(const PointCloudT::ConstPtr& cloud,
-                                     const Eigen::Matrix<double, 3, 1>& origin) const;
+  bool raycastPointCloud(const PointCloudT::ConstPtr& cloud,
+                         const Eigen::Matrix<double, 3, 1>& origin,
+                         UpdateGridT::Accessor& udpate_grid_acc);
 
   /*!
    * \brief Raycasts an reduced data update Grid into full update grid
@@ -311,6 +335,8 @@ protected:
    * \brief Flag checking wether a valid config was already loaded
    */
   bool m_config_set;
+
+  UpdateGridT::Ptr m_update_grid;
 };
 
 #include "VDBMapping.hpp"
