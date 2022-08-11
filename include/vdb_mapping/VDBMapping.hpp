@@ -299,7 +299,8 @@ VDBMapping<DataT, ConfigT>::pointCloudToUpdateGrid(const PointCloudT::ConstPtr& 
       max_range_ray = true;
     }
     openvdb::Vec3d index_buffer = m_vdb_grid->worldToIndex(end_world);
-    openvdb::Coord end_index(index_buffer.x(), index_buffer.y(), index_buffer.z());
+    openvdb::Coord end_index =
+      openvdb::Coord::floor(openvdb::Vec3d(index_buffer.x(), index_buffer.y(), index_buffer.z()));
     temp_acc.setValueOn(end_index, !max_range_ray);
   }
 
@@ -333,7 +334,7 @@ VDBMapping<DataT, ConfigT>::raycastUpdateGrid(const UpdateGridT::Ptr& grid) cons
 
   for (UpdateGridT::ValueOnCIter iter = grid->cbeginValueOn(); iter; ++iter)
   {
-    ray_end_world = m_vdb_grid->indexToWorld(iter.getCoord());
+    ray_end_world = m_vdb_grid->indexToWorld(iter.getCoord()) + m_resolution / 2;
     openvdb::Coord ray_end_index =
       castRayIntoGrid(ray_origin_world, ray_origin_index, ray_end_world, temp_acc);
 
@@ -388,7 +389,7 @@ bool VDBMapping<DataT, ConfigT>::raytrace(const openvdb::Vec3d& ray_origin_world
     {
       if (acc.isValueOn(dda.voxel()))
       {
-        end_point     = m_vdb_grid->indexToWorld(dda.voxel());
+        end_point = m_vdb_grid->indexToWorld(dda.voxel());
         return true;
       }
       else
