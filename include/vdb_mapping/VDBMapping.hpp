@@ -190,6 +190,10 @@ typename ResultGridT::Ptr VDBMapping<DataT, ConfigT>::getMapSection(
     }
   }
 
+  openvdb::Vec3d min(bounding_box.min().x(), bounding_box.min().y(), bounding_box.min().z());
+  openvdb::Vec3d max(bounding_box.max().x(), bounding_box.max().y(), bounding_box.max().z());
+  temp_grid->insertMeta("bb_min", openvdb::Vec3DMetadata(min));
+  temp_grid->insertMeta("bb_max", openvdb::Vec3DMetadata(max));
   return temp_grid;
 }
 
