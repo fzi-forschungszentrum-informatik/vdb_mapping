@@ -436,7 +436,6 @@ VDBMapping<DataT, ConfigT>::updateMap(const UpdateGridT::Ptr& temp_grid)
   UpdateGridT::Accessor change_acc = change->getAccessor();
   if (temp_grid->empty())
   {
-    std::cout << "Update grid is empty. Cannot integrate it into the map." << std::endl;
     return change;
   }
 
