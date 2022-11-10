@@ -44,7 +44,7 @@ VDBMapping<DataT, ConfigT>::VDBMapping(const double resolution)
   {
     UpdateGridT::registerGrid();
   }
-  m_vdb_grid = createVDBMap(m_resolution);
+  m_vdb_grid    = createVDBMap(m_resolution);
   m_update_grid = UpdateGridT::create(false);
 }
 
@@ -210,10 +210,18 @@ VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
 
 template <typename DataT, typename ConfigT>
 void VDBMapping<DataT, ConfigT>::accumulateUpdate(const PointCloudT::ConstPtr& cloud,
-                                                  const Eigen::Matrix<double, 3, 1>& origin)
+                                                  const Eigen::Matrix<double, 3, 1>& origin,
+                                                  const double& max_range)
 {
   UpdateGridT::Accessor update_grid_acc = m_update_grid->getAccessor();
-  raycastPointCloud(cloud, origin, update_grid_acc);
+  if (max_range > 0)
+  {
+    raycastPointCloud(cloud, origin, max_range, update_grid_acc);
+  }
+  else
+  {
+    raycastPointCloud(cloud, origin, update_grid_acc);
+  }
 }
 
 template <typename DataT, typename ConfigT>
@@ -255,9 +263,20 @@ bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& c
   return true;
 }
 
+
 template <typename DataT, typename ConfigT>
 bool VDBMapping<DataT, ConfigT>::raycastPointCloud(const PointCloudT::ConstPtr& cloud,
                                                    const Eigen::Matrix<double, 3, 1>& origin,
+                                                   UpdateGridT::Accessor& update_grid_acc)
+{
+  return raycastPointCloud(cloud, origin, m_max_range, update_grid_acc);
+}
+
+
+template <typename DataT, typename ConfigT>
+bool VDBMapping<DataT, ConfigT>::raycastPointCloud(const PointCloudT::ConstPtr& cloud,
+                                                   const Eigen::Matrix<double, 3, 1>& origin,
+                                                   const double raycast_range,
                                                    UpdateGridT::Accessor& update_grid_acc)
 {
   // Creating a temporary grid in which the new data is casted. This way we prevent the computation
@@ -286,9 +305,9 @@ bool VDBMapping<DataT, ConfigT>::raycastPointCloud(const PointCloudT::ConstPtr& 
     ray_end_world      = openvdb::Vec3d(pt.x, pt.y, pt.z);
     bool max_range_ray = false;
 
-    if (m_max_range > 0.0 && (ray_end_world - ray_origin_world).length() > m_max_range)
+    if (raycast_range > 0.0 && (ray_end_world - ray_origin_world).length() > raycast_range)
     {
-      ray_end_world = ray_origin_world + (ray_end_world - ray_origin_world).unit() * m_max_range;
+      ray_end_world = ray_origin_world + (ray_end_world - ray_origin_world).unit() * raycast_range;
       max_range_ray = true;
     }
 

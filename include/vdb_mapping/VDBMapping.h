@@ -116,9 +116,11 @@ public:
    *
    * \param cloud Input cloud in map coordinates
    * \param origin Sensor position in map coordinates
+   * \param max_range Maximum raycasting range of this measurement
    */
   void accumulateUpdate(const PointCloudT::ConstPtr& cloud,
-                        const Eigen::Matrix<double, 3, 1>& origin);
+                        const Eigen::Matrix<double, 3, 1>& origin,
+                        const double& max_range);
 
   /*!
    * \brief Integrates the accumulated updates into the map
@@ -177,6 +179,26 @@ public:
    */
   bool raycastPointCloud(const PointCloudT::ConstPtr& cloud,
                          const Eigen::Matrix<double, 3, 1>& origin,
+                         UpdateGridT::Accessor& udpate_grid_acc);
+
+  /*!
+   * \brief  Raycasts a Pointcloud into an update Grid
+   *
+   * For each point in cloud, a ray is cast coming from origin. All cells along these rays are
+   * marked as active.
+   *
+   * All points are clipped according to the config's max_range parameter. If a point is within
+   * this range, its corresponding cell value is set to true.
+   *
+   * \param cloud Input sensor point cloud
+   * \param origin Origin of the sensor measurement
+   * \param raycast_range Maximum raycasting range
+   *
+   * \returns Raycasted update grid
+   */
+  bool raycastPointCloud(const PointCloudT::ConstPtr& cloud,
+                         const Eigen::Matrix<double, 3, 1>& origin,
+                         const double raycast_range,
                          UpdateGridT::Accessor& udpate_grid_acc);
 
   /*!
