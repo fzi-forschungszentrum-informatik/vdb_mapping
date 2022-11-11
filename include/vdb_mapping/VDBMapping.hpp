@@ -198,14 +198,25 @@ typename ResultGridT::Ptr VDBMapping<DataT, ConfigT>::getMapSection(
 }
 
 template <typename DataT, typename ConfigT>
-[[deprecated]] bool
-VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
-                                             const Eigen::Matrix<double, 3, 1>& origin)
+bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
+                                                  const Eigen::Matrix<double, 3, 1>& origin)
 {
   UpdateGridT::Ptr update_grid;
   UpdateGridT::Ptr overwrite_grid;
 
-  return insertPointCloud(cloud, origin, update_grid, overwrite_grid, false);
+  return insertPointCloud(cloud, origin, update_grid, overwrite_grid);
+}
+
+template <typename DataT, typename ConfigT>
+bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
+                                                  const Eigen::Matrix<double, 3, 1>& origin,
+                                                  UpdateGridT::Ptr& update_grid,
+                                                  UpdateGridT::Ptr& overwrite_grid)
+{
+  accumulateUpdate(cloud, origin, m_max_range);
+  integrateUpdate(update_grid, overwrite_grid);
+  resetUpdate();
+  return true;
 }
 
 template <typename DataT, typename ConfigT>
@@ -237,32 +248,6 @@ void VDBMapping<DataT, ConfigT>::resetUpdate()
 {
   m_update_grid = UpdateGridT::create(false);
 }
-
-template <typename DataT, typename ConfigT>
-bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
-                                                  const Eigen::Matrix<double, 3, 1>& origin,
-                                                  UpdateGridT::Ptr& update_grid,
-                                                  UpdateGridT::Ptr& overwrite_grid,
-                                                  const bool reduce_data)
-{
-  UpdateGridT::Ptr raycast_update_grid;
-
-  if (!reduce_data)
-  {
-    update_grid                           = UpdateGridT::create(false);
-    UpdateGridT::Accessor update_grid_acc = update_grid->getAccessor();
-    raycastPointCloud(cloud, origin, update_grid_acc);
-    overwrite_grid = updateMap(update_grid);
-  }
-  else
-  {
-    update_grid         = pointCloudToUpdateGrid(cloud, origin);
-    raycast_update_grid = raycastUpdateGrid(update_grid);
-    overwrite_grid      = updateMap(raycast_update_grid);
-  }
-  return true;
-}
-
 
 template <typename DataT, typename ConfigT>
 bool VDBMapping<DataT, ConfigT>::raycastPointCloud(const PointCloudT::ConstPtr& cloud,

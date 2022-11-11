@@ -160,8 +160,7 @@ public:
   bool insertPointCloud(const PointCloudT::ConstPtr& cloud,
                         const Eigen::Matrix<double, 3, 1>& origin,
                         UpdateGridT::Ptr& update_grid,
-                        UpdateGridT::Ptr& overwrite_grid,
-                        const bool reduce_data);
+                        UpdateGridT::Ptr& overwrite_grid);
 
   /*!
    * \brief  Raycasts a Pointcloud into an update Grid
