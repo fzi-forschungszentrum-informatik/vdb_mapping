@@ -204,35 +204,6 @@ public:
                          UpdateGridT::Accessor& udpate_grid_acc);
 
   /*!
-   * \brief Raycasts an reduced data update Grid into full update grid
-   *
-   * A ray is cast from origin to each active cell in grid, along which all cells in the resulting
-   * grid are set to active. If the value of an active input cell is true, the corresponding result
-   * cell is also set to true.
-   *
-   * \param grid Reduced data update Grid containing only the endpoints of the input sensor data
-   *
-   * \returns New full update Grid
-   */
-  UpdateGridT::Ptr raycastUpdateGrid(const UpdateGridT::Ptr& grid) const;
-
-  /*!
-   * \brief Creates a reduced data update grid from a pointcloud which only contains the
-   * endpoints of the input cloud
-   *
-   * The update grid cells belonging to each pointcloud point are marked as active. The points are
-   * clipped at the config's max_range, and the cell value reflects if the point was inserted
-   * directly (true) or if it's the result of this clipping (false).
-   *
-   * \param cloud Input sensor point cloud
-   * \param origin Origin of the sensor measurement
-   *
-   * \returns Reduced update grid
-   */
-  UpdateGridT::Ptr pointCloudToUpdateGrid(const PointCloudT::ConstPtr& cloud,
-                                          const Eigen::Matrix<double, 3, 1>& origin) const;
-
-  /*!
    * \brief Casts a single ray into an update grid structure
    *
    * Each cell along the ray is marked as active.
