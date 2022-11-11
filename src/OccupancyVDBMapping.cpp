@@ -80,13 +80,15 @@ void OccupancyVDBMapping::setConfig(const Config& config)
   }
 
   // Store probabilities as log odds
-  m_logodds_miss      = log(config.prob_miss) - log(1 - config.prob_miss);
-  m_logodds_hit       = log(config.prob_hit) - log(1 - config.prob_hit);
-  m_logodds_thres_min = log(config.prob_thres_min) - log(1 - config.prob_thres_min);
-  m_logodds_thres_max = log(config.prob_thres_max) - log(1 - config.prob_thres_max);
+  m_logodds_miss = static_cast<float>(log(config.prob_miss) - log(1 - config.prob_miss));
+  m_logodds_hit  = static_cast<float>(log(config.prob_hit) - log(1 - config.prob_hit));
+  m_logodds_thres_min =
+    static_cast<float>(log(config.prob_thres_min) - log(1 - config.prob_thres_min));
+  m_logodds_thres_max =
+    static_cast<float>(log(config.prob_thres_max) - log(1 - config.prob_thres_max));
   // Values to clamp the logodds in order to prevent non dynamic map behavior
-  m_max_logodds = log(0.99) - log(0.01);
-  m_min_logodds = log(0.01) - log(0.99);
+  m_max_logodds = static_cast<float>(log(0.99) - log(0.01));
+  m_min_logodds = static_cast<float>(log(0.01) - log(0.99));
   m_config_set  = true;
 }
 

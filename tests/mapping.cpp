@@ -7,7 +7,7 @@ TEST(Mapping, SetConfig)
 {
   OccupancyVDBMapping map(1);
   OccupancyVDBMapping::PointCloudT::Ptr cloud(new OccupancyVDBMapping::PointCloudT);
-  cloud->points.push_back(OccupancyVDBMapping::PointT(0, 0, 1));
+  cloud->points.emplace_back(0, 0, 1);
   Eigen::Matrix<double, 3, 1> origin(0, 0, 0);
   map.insertPointCloud(cloud, origin);
   OccupancyVDBMapping::GridT::Accessor acc = map.getGrid()->getAccessor();
@@ -20,8 +20,8 @@ TEST(Mapping, SetConfig)
   conf.prob_thres_max = 0.51;
   conf.prob_thres_min = 0.49;
   map.setConfig(conf);
-  float log_hit  = log(conf.prob_hit) - log(1 - conf.prob_hit);
-  float log_miss = log(conf.prob_miss) - log(1 - conf.prob_miss);
+  auto log_hit  = static_cast<float>(log(conf.prob_hit) - log(1 - conf.prob_hit));
+  auto log_miss = static_cast<float>(log(conf.prob_miss) - log(1 - conf.prob_miss));
   map.insertPointCloud(cloud, origin);
   EXPECT_EQ(acc.getValue(openvdb::Coord(0, 0, 0)), log_miss);
   EXPECT_EQ(acc.getValue(openvdb::Coord(0, 0, 1)), log_hit);
@@ -39,11 +39,11 @@ TEST(Mapping, InsertPositivePoint)
   conf.prob_thres_min = 0.49;
   map.setConfig(conf);
 
-  float log_hit  = log(conf.prob_hit) - log(1 - conf.prob_hit);
-  float log_miss = log(conf.prob_miss) - log(1 - conf.prob_miss);
+  auto log_hit  = static_cast<float>(log(conf.prob_hit) - log(1 - conf.prob_hit));
+  auto log_miss = static_cast<float>(log(conf.prob_miss) - log(1 - conf.prob_miss));
 
   OccupancyVDBMapping::PointCloudT::Ptr cloud(new OccupancyVDBMapping::PointCloudT);
-  cloud->points.push_back(OccupancyVDBMapping::PointT(0, 0, 5 * resolution));
+  cloud->points.emplace_back(0, 0, 5 * resolution);
   Eigen::Matrix<double, 3, 1> origin(0, 0, 0);
   map.insertPointCloud(cloud, origin);
   OccupancyVDBMapping::GridT::Accessor acc = map.getGrid()->getAccessor();
@@ -70,11 +70,11 @@ TEST(Mapping, InsertNegativePoint)
   conf.prob_thres_min = 0.49;
   map.setConfig(conf);
 
-  float log_hit  = log(conf.prob_hit) - log(1 - conf.prob_hit);
-  float log_miss = log(conf.prob_miss) - log(1 - conf.prob_miss);
+  auto log_hit  = static_cast<float>(log(conf.prob_hit) - log(1 - conf.prob_hit));
+  auto log_miss = static_cast<float>(log(conf.prob_miss) - log(1 - conf.prob_miss));
 
   OccupancyVDBMapping::PointCloudT::Ptr cloud(new OccupancyVDBMapping::PointCloudT);
-  cloud->points.push_back(OccupancyVDBMapping::PointT(0, 0, -5 * resolution));
+  cloud->points.emplace_back(0, 0, -5 * resolution);
   Eigen::Matrix<double, 3, 1> origin(0, 0, 0);
   map.insertPointCloud(cloud, origin);
   OccupancyVDBMapping::GridT::Accessor acc = map.getGrid()->getAccessor();
@@ -101,10 +101,10 @@ TEST(Mapping, InsertMaxRangePoint)
   conf.prob_thres_min = 0.49;
   map.setConfig(conf);
 
-  float log_miss = log(conf.prob_miss) - log(1 - conf.prob_miss);
+  auto log_miss = static_cast<float>(log(conf.prob_miss) - log(1 - conf.prob_miss));
 
   OccupancyVDBMapping::PointCloudT::Ptr cloud(new OccupancyVDBMapping::PointCloudT);
-  cloud->points.push_back(OccupancyVDBMapping::PointT(0, 0, 7 * resolution));
+  cloud->points.emplace_back(0, 0, 7 * resolution);
   Eigen::Matrix<double, 3, 1> origin(0, 0, 0);
   map.insertPointCloud(cloud, origin);
   OccupancyVDBMapping::GridT::Accessor acc = map.getGrid()->getAccessor();
@@ -130,10 +130,10 @@ TEST(Mapping, ResetMap)
   conf.prob_thres_min = 0.49;
   map.setConfig(conf);
 
-  float log_hit = log(conf.prob_hit) - log(1 - conf.prob_hit);
+  auto log_hit = static_cast<float>(log(conf.prob_hit) - log(1 - conf.prob_hit));
 
   OccupancyVDBMapping::PointCloudT::Ptr cloud(new OccupancyVDBMapping::PointCloudT);
-  cloud->points.push_back(OccupancyVDBMapping::PointT(0, 0, 1));
+  cloud->points.emplace_back(0, 0, 1);
   Eigen::Matrix<double, 3, 1> origin(0, 0, 0);
   map.insertPointCloud(cloud, origin);
   OccupancyVDBMapping::GridT::Accessor acc = map.getGrid()->getAccessor();

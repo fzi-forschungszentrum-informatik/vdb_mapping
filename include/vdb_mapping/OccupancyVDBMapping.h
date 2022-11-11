@@ -65,27 +65,27 @@ protected:
   /*!
    * \brief Probability update value for passing an obstacle
    */
-  double m_logodds_hit;
+  float m_logodds_hit;
   /*!
    * \brief Probability update value for passing free space
    */
-  double m_logodds_miss;
+  float m_logodds_miss;
   /*!
    * \brief Upper occupancy probability threshold
    */
-  double m_logodds_thres_min;
+  float m_logodds_thres_min;
   /*!
    * \brief Lower occupancy probability threshold
    */
-  double m_logodds_thres_max;
+  float m_logodds_thres_max;
   /*!
    * \brief Maximum clamping point for logodds
    */
-  double m_max_logodds;
+  float m_max_logodds;
   /*!
    * \brief Minimum clamping point for logodds
    */
-  double m_min_logodds;
+  float m_min_logodds;
 };
 
 } // namespace vdb_mapping
