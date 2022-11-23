@@ -174,6 +174,7 @@ public:
    *
    * \param cloud Input sensor point cloud
    * \param origin Origin of the sensor measurement
+   * \param update_grid_acc Accessor to the grid in which the raycasting takes place
    *
    * \returns Raycasted update grid
    */
@@ -193,6 +194,7 @@ public:
    * \param cloud Input sensor point cloud
    * \param origin Origin of the sensor measurement
    * \param raycast_range Maximum raycasting range
+   * \param update_grid_acc Accessor to the grid in which the raycasting takes place
    *
    * \returns Raycasted update grid
    */
