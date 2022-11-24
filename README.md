@@ -2,7 +2,7 @@ VDB Mapping Core Library
 ===
 DISCLAIMER: This library is still under development. Be warned that some interfaces will be changed and/or extended in the future.
 
-The VDB Mapping core library was primarily developed to be used in combination with the corresponding [ROS wrapper](https://github.com/fzi-forschungszentrum-informatik/vdb_mapping_ros).
+The VDB Mapping core library was primarily developed to be used in combination with the corresponding [ROS wrapper](https://github.com/fzi-forschungszentrum-informatik/vdb_mapping_ros) or [ROS2 wrapper](https://github.com/fzi-forschungszentrum-informatik/vdb_mapping_ros2)
 
 ## Getting Started
 
@@ -34,13 +34,13 @@ make -j8
 make install
 ```
 
-#### ROS workspace
+#### ROS Workspace
 In case you want build this library inside of a ROS workspace in combination with [VDB Mapping ROS](https://github.com/fzi-forschungszentrum-informatik/vdb_mapping_ros), you cannot use catkin_make since this library is not a catkin package.
 Instead you have to use [catkin build](https://catkin-tools.readthedocs.io/en/latest/verbs/catkin_build.html) or [catkin_make_isolated](http://docs.ros.org/independent/api/rep/html/rep-0134.html) to build the workspace.
 
 ``` bash
 # source global ros
-source /opt/ros/<your_ros_version>/setub.bash
+source /opt/ros/<your_ros_version>/setup.{zsh/bash}
 
 # create a catkin workspace
 mkdir -p ~/catkin_ws/src && cd catkin_ws
@@ -59,6 +59,31 @@ catkin build
 # source the workspace
 source deve/setup.bash
 
+```
+
+#### ROS2 Workspace
+
+``` bash
+# source global ros
+source /opt/ros/<your_ros_version>/setup.{zsh/bash}
+
+# create a catkin workspace
+mkdir -p ~/colcon_ws/src && cd ~/colcon_ws/src
+
+# clone packages
+git clone https://github.com/fzi-forschungszentrum-informatik/vdb_mapping
+git clone https://github.com/fzi-forschungszentrum-informatik/vdb_mapping_ros2
+
+# install dependencies
+sudo apt update
+rosdep update
+rosdep install --from-paths src --ignore-src -y
+
+# build the workspace.  
+colcon build
+
+# source the workspace
+source install/setup.bash
 ```
 
 ## Acknowledgement
