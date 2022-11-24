@@ -153,7 +153,8 @@ public:
    *
    * \param cloud Input cloud in map coordinates
    * \param origin Sensor position in map coordinates
-   * \param update_grid Update grid that was created internally while maping
+   * \param update_grid Update grid that was created internally while mapping
+   * \param overwrite_grid Overwrite grid containing all changed voxel indices
    *
    * \returns Was the insertion of the new pointcloud successful
    */
