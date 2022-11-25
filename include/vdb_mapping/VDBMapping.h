@@ -166,11 +166,12 @@ public:
   /*!
    * \brief  Raycasts a Pointcloud into an update Grid
    *
-   * For each point in cloud, a ray is cast coming from origin. All cells along these rays are
-   * marked as active.
+   * For each point in the input pointcloud, a raycast is performed from the origin.
+   * All cells along these rays are marked as active.
    *
    * All points are clipped according to the config's max_range parameter. If a point is within
-   * this range, its corresponding cell value is set to true.
+   * this range, its corresponding cell value in the update grid is set to true and will be handled
+   * as a sensor hit in the map update.
    *
    * \param cloud Input sensor point cloud
    * \param origin Origin of the sensor measurement
@@ -184,12 +185,12 @@ public:
 
   /*!
    * \brief  Raycasts a Pointcloud into an update Grid
-   *
-   * For each point in cloud, a ray is cast coming from origin. All cells along these rays are
-   * marked as active.
+   * For each point in the input pointcloud, a raycast is performed from the origin.
+   * All cells along these rays are marked as active.
    *
    * All points are clipped according to the config's max_range parameter. If a point is within
-   * this range, its corresponding cell value is set to true.
+   * this range, its corresponding cell value in the update grid is set to true and will be handled
+   * as a sensor hit in the map update.
    *
    * \param cloud Input sensor point cloud
    * \param origin Origin of the sensor measurement
