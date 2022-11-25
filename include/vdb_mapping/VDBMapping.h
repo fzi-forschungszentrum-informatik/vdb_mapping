@@ -59,7 +59,7 @@ struct BaseConfig
 /*!
  * \brief Main Mapping class which handles all data integration
  */
-template <typename DataT, typename ConfigT = BaseConfig>
+template <typename TData, typename TConfig = BaseConfig>
 class VDBMapping
 {
 public:
@@ -70,7 +70,7 @@ public:
   using Vec3T = RayT::Vec3Type;
   using DDAT  = openvdb::math::DDA<RayT, 0>;
 
-  using GridT       = openvdb::Grid<typename openvdb::tree::Tree4<DataT, 5, 4, 3>::Type>;
+  using GridT       = openvdb::Grid<typename openvdb::tree::Tree4<TData, 5, 4, 3>::Type>;
   using UpdateGridT = openvdb::Grid<openvdb::tree::Tree4<bool, 1, 4, 3>::Type>;
 
 
@@ -84,7 +84,7 @@ public:
    * \param resolution Resolution of the VDB Grid
    */
   VDBMapping(const double resolution);
-  virtual ~VDBMapping(){};
+  virtual ~VDBMapping() = default;
 
   /*!
    * \brief Creates a new VDB Grid
@@ -108,7 +108,7 @@ public:
   /*!
    * \brief Loads a stored map
    */
-  bool loadMap(const std::string file_path);
+  bool loadMap(const std::string& file_path);
 
 
   /*!
@@ -181,7 +181,7 @@ public:
    */
   bool raycastPointCloud(const PointCloudT::ConstPtr& cloud,
                          const Eigen::Matrix<double, 3, 1>& origin,
-                         UpdateGridT::Accessor& udpate_grid_acc);
+                         UpdateGridT::Accessor& update_grid_acc);
 
   /*!
    * \brief  Raycasts a Pointcloud into an update Grid
@@ -202,7 +202,7 @@ public:
   bool raycastPointCloud(const PointCloudT::ConstPtr& cloud,
                          const Eigen::Matrix<double, 3, 1>& origin,
                          const double raycast_range,
-                         UpdateGridT::Accessor& udpate_grid_acc);
+                         UpdateGridT::Accessor& update_grid_acc);
 
   /*!
    * \brief Casts a single ray into an update grid structure
@@ -260,9 +260,9 @@ public:
    * \returns World coordinate bounding box
    */
   openvdb::BBoxd
-  createWorldBoundingBox(const Eigen::Matrix<double, 3, 1> min_boundary,
-                         const Eigen::Matrix<double, 3, 1> max_boundary,
-                         const Eigen::Matrix<double, 4, 4> map_to_reference_tf) const;
+  createWorldBoundingBox(const Eigen::Matrix<double, 3, 1>& min_boundary,
+                         const Eigen::Matrix<double, 3, 1>& max_boundary,
+                         const Eigen::Matrix<double, 4, 4>& map_to_reference_tf) const;
   /*!
    * \brief Creates an index coordinate bounding box around a transform
    *
@@ -273,9 +273,9 @@ public:
    * \returns Index coordinate bounding box
    */
   openvdb::CoordBBox
-  createIndexBoundingBox(const Eigen::Matrix<double, 3, 1> min_boundary,
-                         const Eigen::Matrix<double, 3, 1> max_boundary,
-                         const Eigen::Matrix<double, 4, 4> map_to_reference_tf) const;
+  createIndexBoundingBox(const Eigen::Matrix<double, 3, 1>& min_boundary,
+                         const Eigen::Matrix<double, 3, 1>& max_boundary,
+                         const Eigen::Matrix<double, 4, 4>& map_to_reference_tf) const;
 
   /*!
    * \brief Generates an update grid from the bouding box and a reference frame
@@ -287,30 +287,30 @@ public:
    * \returns Update Grid
    */
   typename UpdateGridT::Ptr
-  getMapSectionUpdateGrid(const Eigen::Matrix<double, 3, 1> min_boundary,
-                          const Eigen::Matrix<double, 3, 1> max_boundary,
-                          const Eigen::Matrix<double, 4, 4> map_to_reference_tf) const;
+  getMapSectionUpdateGrid(const Eigen::Matrix<double, 3, 1>& min_boundary,
+                          const Eigen::Matrix<double, 3, 1>& max_boundary,
+                          const Eigen::Matrix<double, 4, 4>& map_to_reference_tf) const;
   typename GridT::Ptr
-  getMapSectionGrid(const Eigen::Matrix<double, 3, 1> min_boundary,
-                    const Eigen::Matrix<double, 3, 1> max_boundary,
-                    const Eigen::Matrix<double, 4, 4> map_to_reference_tf) const;
-  template <typename ResultGridT>
-  typename ResultGridT::Ptr
-  getMapSection(const Eigen::Matrix<double, 3, 1> min_boundary,
-                const Eigen::Matrix<double, 3, 1> max_boundary,
-                const Eigen::Matrix<double, 4, 4> map_to_reference_tf) const;
+  getMapSectionGrid(const Eigen::Matrix<double, 3, 1>& min_boundary,
+                    const Eigen::Matrix<double, 3, 1>& max_boundary,
+                    const Eigen::Matrix<double, 4, 4>& map_to_reference_tf) const;
+  template <typename TResultGrid>
+  typename TResultGrid::Ptr
+  getMapSection(const Eigen::Matrix<double, 3, 1>& min_boundary,
+                const Eigen::Matrix<double, 3, 1>& max_boundary,
+                const Eigen::Matrix<double, 4, 4>& map_to_reference_tf) const;
 
   /*!
    * \brief Handles changing the mapping config
    *
    * \param config Configuration structure
    */
-  virtual void setConfig(const ConfigT& config);
+  virtual void setConfig(const TConfig& config);
 
 
 protected:
-  virtual bool updateFreeNode(DataT& voxel_value, bool& active) { return false; }
-  virtual bool updateOccupiedNode(DataT& voxel_value, bool& active) { return false; }
+  virtual bool updateFreeNode(TData& voxel_value, bool& active) { return false; }
+  virtual bool updateOccupiedNode(TData& voxel_value, bool& active) { return false; }
   /*!
    * \brief VDB grid pointer
    */
