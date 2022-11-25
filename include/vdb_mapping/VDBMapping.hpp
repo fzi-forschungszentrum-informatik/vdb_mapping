@@ -44,14 +44,16 @@ VDBMapping<DataT, ConfigT>::VDBMapping(const double resolution)
   {
     UpdateGridT::registerGrid();
   }
-  m_vdb_grid = createVDBMap(m_resolution);
+  m_vdb_grid    = createVDBMap(m_resolution);
+  m_update_grid = UpdateGridT::create(false);
 }
 
 template <typename DataT, typename ConfigT>
 void VDBMapping<DataT, ConfigT>::resetMap()
 {
   m_vdb_grid->clear();
-  m_vdb_grid = createVDBMap(m_resolution);
+  m_vdb_grid    = createVDBMap(m_resolution);
+  m_update_grid = UpdateGridT::create(false);
 }
 
 
@@ -188,6 +190,10 @@ typename ResultGridT::Ptr VDBMapping<DataT, ConfigT>::getMapSection(
     }
   }
 
+  openvdb::Vec3d min(bounding_box.min().x(), bounding_box.min().y(), bounding_box.min().z());
+  openvdb::Vec3d max(bounding_box.max().x(), bounding_box.max().y(), bounding_box.max().z());
+  temp_grid->insertMeta("bb_min", openvdb::Vec3DMetadata(min));
+  temp_grid->insertMeta("bb_max", openvdb::Vec3DMetadata(max));
   return temp_grid;
 }
 
@@ -203,6 +209,36 @@ VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
 }
 
 template <typename DataT, typename ConfigT>
+void VDBMapping<DataT, ConfigT>::accumulateUpdate(const PointCloudT::ConstPtr& cloud,
+                                                  const Eigen::Matrix<double, 3, 1>& origin,
+                                                  const double& max_range)
+{
+  UpdateGridT::Accessor update_grid_acc = m_update_grid->getAccessor();
+  if (max_range > 0)
+  {
+    raycastPointCloud(cloud, origin, max_range, update_grid_acc);
+  }
+  else
+  {
+    raycastPointCloud(cloud, origin, update_grid_acc);
+  }
+}
+
+template <typename DataT, typename ConfigT>
+void VDBMapping<DataT, ConfigT>::integrateUpdate(UpdateGridT::Ptr& update_grid,
+                                                 UpdateGridT::Ptr& overwrite_grid)
+{
+  overwrite_grid = updateMap(m_update_grid);
+  update_grid    = m_update_grid;
+}
+
+template <typename DataT, typename ConfigT>
+void VDBMapping<DataT, ConfigT>::resetUpdate()
+{
+  m_update_grid = UpdateGridT::create(false);
+}
+
+template <typename DataT, typename ConfigT>
 bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
                                                   const Eigen::Matrix<double, 3, 1>& origin,
                                                   UpdateGridT::Ptr& update_grid,
@@ -213,7 +249,9 @@ bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& c
 
   if (!reduce_data)
   {
-    update_grid    = raycastPointCloud(cloud, origin);
+    update_grid                           = UpdateGridT::create(false);
+    UpdateGridT::Accessor update_grid_acc = update_grid->getAccessor();
+    raycastPointCloud(cloud, origin, update_grid_acc);
     overwrite_grid = updateMap(update_grid);
   }
   else
@@ -225,21 +263,30 @@ bool VDBMapping<DataT, ConfigT>::insertPointCloud(const PointCloudT::ConstPtr& c
   return true;
 }
 
+
 template <typename DataT, typename ConfigT>
-VDBMapping<DataT, ConfigT>::UpdateGridT::Ptr
-VDBMapping<DataT, ConfigT>::raycastPointCloud(const PointCloudT::ConstPtr& cloud,
-                                              const Eigen::Matrix<double, 3, 1>& origin) const
+bool VDBMapping<DataT, ConfigT>::raycastPointCloud(const PointCloudT::ConstPtr& cloud,
+                                                   const Eigen::Matrix<double, 3, 1>& origin,
+                                                   UpdateGridT::Accessor& update_grid_acc)
+{
+  return raycastPointCloud(cloud, origin, m_max_range, update_grid_acc);
+}
+
+
+template <typename DataT, typename ConfigT>
+bool VDBMapping<DataT, ConfigT>::raycastPointCloud(const PointCloudT::ConstPtr& cloud,
+                                                   const Eigen::Matrix<double, 3, 1>& origin,
+                                                   const double raycast_range,
+                                                   UpdateGridT::Accessor& update_grid_acc)
 {
   // Creating a temporary grid in which the new data is casted. This way we prevent the computation
   // of redundant probability updates in the actual map
-  UpdateGridT::Ptr temp_grid     = UpdateGridT::create(false);
-  UpdateGridT::Accessor temp_acc = temp_grid->getAccessor();
 
   // Check if a valid configuration was loaded
   if (!m_config_set)
   {
     std::cerr << "Map not properly configured. Did you call setConfig method?" << std::endl;
-    return temp_grid;
+    return false;
   }
 
   RayT ray;
@@ -258,21 +305,21 @@ VDBMapping<DataT, ConfigT>::raycastPointCloud(const PointCloudT::ConstPtr& cloud
     ray_end_world      = openvdb::Vec3d(pt.x, pt.y, pt.z);
     bool max_range_ray = false;
 
-    if (m_max_range > 0.0 && (ray_end_world - ray_origin_world).length() > m_max_range)
+    if (raycast_range > 0.0 && (ray_end_world - ray_origin_world).length() > raycast_range)
     {
-      ray_end_world = ray_origin_world + (ray_end_world - ray_origin_world).unit() * m_max_range;
+      ray_end_world = ray_origin_world + (ray_end_world - ray_origin_world).unit() * raycast_range;
       max_range_ray = true;
     }
 
     openvdb::Coord ray_end_index =
-      castRayIntoGrid(ray_origin_world, ray_origin_index, ray_end_world, temp_acc);
+      castRayIntoGrid(ray_origin_world, ray_origin_index, ray_end_world, update_grid_acc);
 
     if (!max_range_ray)
     {
-      temp_acc.setValueOn(ray_end_index, true);
+      update_grid_acc.setValueOn(ray_end_index, true);
     }
   }
-  return temp_grid;
+  return true;
 }
 
 template <typename DataT, typename ConfigT>
@@ -412,7 +459,6 @@ VDBMapping<DataT, ConfigT>::updateMap(const UpdateGridT::Ptr& temp_grid)
   UpdateGridT::Accessor change_acc = change->getAccessor();
   if (temp_grid->empty())
   {
-    std::cout << "Update grid is empty. Cannot integrate it into the map." << std::endl;
     return change;
   }
 

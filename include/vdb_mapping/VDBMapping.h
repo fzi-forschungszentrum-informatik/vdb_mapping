@@ -110,6 +110,31 @@ public:
    */
   bool loadMap(const std::string file_path);
 
+
+  /*!
+   * \brief Accumulates a new sensor point cloud to the update grid
+   *
+   * \param cloud Input cloud in map coordinates
+   * \param origin Sensor position in map coordinates
+   * \param max_range Maximum raycasting range of this measurement
+   */
+  void accumulateUpdate(const PointCloudT::ConstPtr& cloud,
+                        const Eigen::Matrix<double, 3, 1>& origin,
+                        const double& max_range);
+
+  /*!
+   * \brief Integrates the accumulated updates into the map
+   *
+   * \param update_grid Update grid
+   * \param overwrite_grid Overwrite grid
+   */
+  void integrateUpdate(UpdateGridT::Ptr& update_grid, UpdateGridT::Ptr& overwrite_grid);
+
+  /*!
+   * \brief Resets the updates grid
+   */
+  void resetUpdate();
+
   /*!
    * \brief Handles the integration of new PointCloud data into the VDB data structure.
    * All datapoints are raycasted starting from the origin position
@@ -141,19 +166,43 @@ public:
   /*!
    * \brief  Raycasts a Pointcloud into an update Grid
    *
-   * For each point in cloud, a ray is cast coming from origin. All cells along these rays are
-   * marked as active.
+   * For each point in the input pointcloud, a raycast is performed from the origin.
+   * All cells along these rays are marked as active.
    *
    * All points are clipped according to the config's max_range parameter. If a point is within
-   * this range, its corresponding cell value is set to true.
+   * this range, its corresponding cell value in the update grid is set to true and will be handled
+   * as a sensor hit in the map update.
    *
    * \param cloud Input sensor point cloud
    * \param origin Origin of the sensor measurement
+   * \param update_grid_acc Accessor to the grid in which the raycasting takes place
    *
    * \returns Raycasted update grid
    */
-  UpdateGridT::Ptr raycastPointCloud(const PointCloudT::ConstPtr& cloud,
-                                     const Eigen::Matrix<double, 3, 1>& origin) const;
+  bool raycastPointCloud(const PointCloudT::ConstPtr& cloud,
+                         const Eigen::Matrix<double, 3, 1>& origin,
+                         UpdateGridT::Accessor& udpate_grid_acc);
+
+  /*!
+   * \brief  Raycasts a Pointcloud into an update Grid
+   * For each point in the input pointcloud, a raycast is performed from the origin.
+   * All cells along these rays are marked as active.
+   *
+   * All points are clipped according to the config's max_range parameter. If a point is within
+   * this range, its corresponding cell value in the update grid is set to true and will be handled
+   * as a sensor hit in the map update.
+   *
+   * \param cloud Input sensor point cloud
+   * \param origin Origin of the sensor measurement
+   * \param raycast_range Maximum raycasting range
+   * \param update_grid_acc Accessor to the grid in which the raycasting takes place
+   *
+   * \returns Raycasted update grid
+   */
+  bool raycastPointCloud(const PointCloudT::ConstPtr& cloud,
+                         const Eigen::Matrix<double, 3, 1>& origin,
+                         const double raycast_range,
+                         UpdateGridT::Accessor& udpate_grid_acc);
 
   /*!
    * \brief Raycasts an reduced data update Grid into full update grid
@@ -311,6 +360,8 @@ protected:
    * \brief Flag checking wether a valid config was already loaded
    */
   bool m_config_set;
+
+  UpdateGridT::Ptr m_update_grid;
 };
 
 #include "VDBMapping.hpp"
