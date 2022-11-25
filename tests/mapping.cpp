@@ -78,13 +78,13 @@ TEST(Mapping, InsertNegativePoint)
   Eigen::Matrix<double, 3, 1> origin(0, 0, 0);
   map.insertPointCloud(cloud, origin);
   OccupancyVDBMapping::GridT::Accessor acc = map.getGrid()->getAccessor();
-  for (int i = 1; i < 6; ++i)
+  for (int i = 1; i < 5; ++i)
   {
     openvdb::Coord coord(0, 0, -1 * i);
     EXPECT_EQ(acc.getValue(coord), log_miss);
     EXPECT_FALSE(acc.isValueOn(coord));
   }
-  openvdb::Coord coord(0, 0, -6);
+  openvdb::Coord coord(0, 0, -5);
   EXPECT_EQ(acc.getValue(coord), log_hit);
   EXPECT_TRUE(acc.isValueOn(coord));
 }
