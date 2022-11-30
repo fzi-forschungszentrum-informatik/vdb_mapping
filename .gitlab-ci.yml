@@ -1,5 +1,5 @@
 variables:
-  CI_SCRIPTS_BRANCH: matrix
+  CI_SCRIPTS_BRANCH: dev
 
 fla_v2:
   trigger:
