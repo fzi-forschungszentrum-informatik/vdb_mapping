@@ -300,6 +300,11 @@ public:
                 const Eigen::Matrix<double, 3, 1>& max_boundary,
                 const Eigen::Matrix<double, 4, 4>& map_to_reference_tf) const;
 
+  void applyMapSectionGrid(const typename VDBMapping<TData, TConfig>::GridT::Ptr grid);
+  void applyMapSectionUpdateGrid(const typename VDBMapping<TData, TConfig>::UpdateGridT::Ptr grid);
+  template <typename TSectionGrid>
+  void applyMapSection(typename TSectionGrid::Ptr grid);
+
   /*!
    * \brief Handles changing the mapping config
    *
