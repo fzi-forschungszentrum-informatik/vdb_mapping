@@ -322,30 +322,31 @@ public:
   /*!
    * \brief Applies a map section grid to the map
    *
-   * \param grid Section grid containing the information about part of the map. The boundary box
+   * \param section Section grid containing the information about part of the map. The boundary box
    * of the section is encoded in the grids meta information
    *
    */
-  void applyMapSectionGrid(const typename VDBMapping<TData, TConfig>::GridT::Ptr grid);
+  void applyMapSectionGrid(const typename VDBMapping<TData, TConfig>::GridT::Ptr section);
 
   /*!
    * \brief Applies a map section update grid to the map
    *
-   * \param grid Section grid containing the information about part of the map. The boundary box
+   * \param section Section grid containing the information about part of the map. The boundary box
    * of the section is encoded in the grids meta information
    *
    */
-  void applyMapSectionUpdateGrid(const typename VDBMapping<TData, TConfig>::UpdateGridT::Ptr grid);
+  void
+  applyMapSectionUpdateGrid(const typename VDBMapping<TData, TConfig>::UpdateGridT::Ptr section);
 
   /*!
    * \brief Applies a map section to the map
    *
-   * \param grid Section grid containing the information about part of the map. The boundary box
+   * \param section Section grid containing the information about part of the map. The boundary box
    * of the section is encoded in the grids meta information
    *
    */
   template <typename TSectionGrid>
-  void applyMapSection(typename TSectionGrid::Ptr grid);
+  void applyMapSection(typename TSectionGrid::Ptr section);
 
   /*!
    * \brief Handles changing the mapping config
