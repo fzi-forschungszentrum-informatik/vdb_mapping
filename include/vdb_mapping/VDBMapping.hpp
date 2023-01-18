@@ -214,6 +214,45 @@ typename TResultGrid::Ptr VDBMapping<TData, TConfig>::getMapSection(
 }
 
 template <typename TData, typename TConfig>
+void VDBMapping<TData, TConfig>::applyMapSectionGrid(
+  const typename VDBMapping<TData, TConfig>::GridT::Ptr section)
+{
+  applyMapSection<typename VDBMapping<TData, TConfig>::GridT>(section);
+}
+
+template <typename TData, typename TConfig>
+void VDBMapping<TData, TConfig>::applyMapSectionUpdateGrid(
+  const typename VDBMapping<TData, TConfig>::UpdateGridT::Ptr section)
+{
+  applyMapSection<typename VDBMapping<TData, TConfig>::UpdateGridT>(section);
+}
+
+template <typename TData, typename TConfig>
+template <typename TSectionGrid>
+void VDBMapping<TData, TConfig>::applyMapSection(typename TSectionGrid::Ptr section)
+{
+  typename TSectionGrid::Accessor section_acc = section->getAccessor();
+  typename GridT::Accessor acc                = m_vdb_grid->getAccessor();
+
+  openvdb::Vec3d min = section->template metaValue<openvdb::Vec3d>("bb_min");
+  openvdb::Vec3d max = section->template metaValue<openvdb::Vec3d>("bb_max");
+  openvdb::CoordBBox bbox(openvdb::Coord::floor(min), openvdb::Coord::floor(max));
+
+  for (auto iter = m_vdb_grid->cbeginValueOn(); iter; ++iter)
+  {
+    if (bbox.isInside(iter.getCoord()))
+    {
+      acc.setActiveState(iter.getCoord(), false);
+    }
+  }
+  for (auto iter = section->cbeginValueOn(); iter; ++iter)
+  {
+    acc.setActiveState(iter.getCoord(), true);
+  }
+}
+
+
+template <typename TData, typename TConfig>
 bool VDBMapping<TData, TConfig>::insertPointCloud(const PointCloudT::ConstPtr& cloud,
                                                   const Eigen::Matrix<double, 3, 1>& origin)
 {
