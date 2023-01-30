@@ -62,6 +62,8 @@ protected:
   inline bool updateFreeNode(float& voxel_value, bool& active) override;
   inline bool updateOccupiedNode(float& voxel_value, bool& active) override;
 
+  void createMapFromPointCloud(const PointCloudT::Ptr cloud) override;
+
   /*!
    * \brief Probability update value for passing an obstacle
    */

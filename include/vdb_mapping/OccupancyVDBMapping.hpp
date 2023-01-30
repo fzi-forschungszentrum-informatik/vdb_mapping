@@ -59,6 +59,24 @@ bool OccupancyVDBMapping::updateOccupiedNode(float& voxel_value, bool& active)
   return true;
 }
 
+void OccupancyVDBMapping::createMapFromPointCloud(const PointCloudT::Ptr cloud)
+{
+  typename GridT::Accessor acc = m_vdb_grid->getAccessor();
+
+  for (auto point : cloud->points)
+  {
+    openvdb::Vec3d index_coord =
+      m_vdb_grid->worldToIndex(openvdb::Vec3d(point.x, point.y, point.z));
+    acc.setValueOn(openvdb::Coord::floor(index_coord), m_max_logodds);
+  }
+  for(typename GridT::ValueAllCIter iter = m_vdb_grid->cbeginValueAll(); iter; ++iter)
+  {
+    if(!acc.isValueOn(iter.getCoord()))
+    {
+      acc.setValue(iter.getCoord(), m_min_logodds);
+    }
+  }
+}
 
 void OccupancyVDBMapping::setConfig(const Config& config)
 {

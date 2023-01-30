@@ -98,6 +98,19 @@ bool VDBMapping<TData, TConfig>::loadMap(const std::string& file_path)
 }
 
 template <typename TData, typename TConfig>
+bool VDBMapping<TData, TConfig>::loadMapFromPCD(const std::string& file_path, bool set_background)
+{
+  PointCloudT::Ptr cloud(new PointCloudT);
+  if (pcl::io::loadPCDFile<PointT>(file_path, *cloud) == -1)
+  {
+    PCL_ERROR("Could not open PCD file");
+    return false;
+  }
+  m_vdb_grid->clear();
+  createMapFromPointCloud(cloud);
+}
+
+template <typename TData, typename TConfig>
 typename VDBMapping<TData, TConfig>::GridT::Ptr
 VDBMapping<TData, TConfig>::createVDBMap(double resolution)
 {
