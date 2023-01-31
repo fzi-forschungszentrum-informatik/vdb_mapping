@@ -108,6 +108,7 @@ bool VDBMapping<TData, TConfig>::loadMapFromPCD(const std::string& file_path, bo
   }
   m_vdb_grid->clear();
   createMapFromPointCloud(cloud);
+  return true;
 }
 
 template <typename TData, typename TConfig>
