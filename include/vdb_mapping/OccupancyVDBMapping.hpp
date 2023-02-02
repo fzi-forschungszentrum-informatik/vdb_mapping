@@ -59,8 +59,15 @@ bool OccupancyVDBMapping::updateOccupiedNode(float& voxel_value, bool& active)
   return true;
 }
 
-void OccupancyVDBMapping::createMapFromPointCloud(const PointCloudT::Ptr cloud)
+void OccupancyVDBMapping::createMapFromPointCloud(const PointCloudT::Ptr cloud,
+                                                  const bool set_background,
+                                                  const bool clear_map)
 {
+  if (clear_map)
+  {
+    m_vdb_grid->clear();
+  }
+
   typename GridT::Accessor acc = m_vdb_grid->getAccessor();
 
   for (auto point : cloud->points)
@@ -71,11 +78,14 @@ void OccupancyVDBMapping::createMapFromPointCloud(const PointCloudT::Ptr cloud)
   }
   openvdb::CoordBBox active_bounding_box = m_vdb_grid->evalActiveVoxelBoundingBox();
 
-  for (typename GridT::ValueAllCIter iter = m_vdb_grid->cbeginValueAll(); iter; ++iter)
+  if (set_background)
   {
-    if (active_bounding_box.isInside(iter.getCoord()) && !acc.isValueOn(iter.getCoord()))
+    for (typename GridT::ValueAllCIter iter = m_vdb_grid->cbeginValueAll(); iter; ++iter)
     {
-      acc.setValueOff(iter.getCoord(), m_min_logodds);
+      if (active_bounding_box.isInside(iter.getCoord()) && !acc.isValueOn(iter.getCoord()))
+      {
+        acc.setValueOff(iter.getCoord(), m_min_logodds);
+      }
     }
   }
   m_vdb_grid->pruneGrid();

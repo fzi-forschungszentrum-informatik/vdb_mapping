@@ -116,10 +116,12 @@ public:
    *
    * \param file_path Path to pcd file
    * \param set_background Specifies if the background should be set
+   * \param clear_map Specifies if the map has to be cleared before inserting data
    *
    * \returns Loading of map successfull
    */
-  bool loadMapFromPCD(const std::string& file_path, const bool set_background);
+  bool
+  loadMapFromPCD(const std::string& file_path, const bool set_background, const bool clear_map);
 
   /*!
    * \brief Accumulates a new sensor point cloud to the update grid
@@ -369,7 +371,12 @@ public:
 protected:
   virtual bool updateFreeNode(TData& voxel_value, bool& active) { return false; }
   virtual bool updateOccupiedNode(TData& voxel_value, bool& active) { return false; }
-  virtual void createMapFromPointCloud(const PointCloudT::Ptr cloud) {}
+  virtual void createMapFromPointCloud(const PointCloudT::Ptr cloud,
+                                       const bool set_background,
+                                       const bool clear_map)
+  {
+    std::cerr << "Not implemented for data type" << std::endl;
+  }
 
   /*!
    * \brief VDB grid pointer
