@@ -76,18 +76,26 @@ void OccupancyVDBMapping::createMapFromPointCloud(const PointCloudT::Ptr cloud,
       m_vdb_grid->worldToIndex(openvdb::Vec3d(point.x, point.y, point.z));
     acc.setValueOn(openvdb::Coord::floor(index_coord), m_max_logodds);
   }
-  openvdb::CoordBBox active_bounding_box = m_vdb_grid->evalActiveVoxelBoundingBox();
+  openvdb::CoordBBox bbox = m_vdb_grid->evalActiveVoxelBoundingBox();
 
   if (set_background)
   {
-    for (typename GridT::ValueAllCIter iter = m_vdb_grid->cbeginValueAll(); iter; ++iter)
+    for (int x = bbox.min().x(); x <= bbox.max().x(); ++x)
     {
-      if (active_bounding_box.isInside(iter.getCoord()) && !acc.isValueOn(iter.getCoord()))
+      for (int y = bbox.min().y(); y <= bbox.max().y(); ++y)
       {
-        acc.setValueOff(iter.getCoord(), m_min_logodds);
+        for (int z = bbox.min().z(); z <= bbox.max().z(); ++z)
+        {
+          openvdb::Coord index_coord = openvdb::Coord(x, y, z);
+          if (!acc.isValueOn(index_coord))
+          {
+            acc.setValueOff(index_coord, m_min_logodds);
+          }
+        }
       }
     }
   }
+
   m_vdb_grid->pruneGrid();
 }
 
