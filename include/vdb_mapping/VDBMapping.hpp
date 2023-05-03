@@ -78,6 +78,44 @@ bool VDBMapping<TData, TConfig>::saveMap() const
 }
 
 template <typename TData, typename TConfig>
+bool VDBMapping<TData, TConfig>::saveMapToPCD()
+{
+  auto timestamp     = std::chrono::system_clock::now();
+  std::time_t now_tt = std::chrono::system_clock::to_time_t(timestamp);
+  std::tm tm         = *std::localtime(&now_tt);
+  std::stringstream sstime;
+  sstime << std::put_time(&tm, "%Y-%m-%d_%H-%M-%S");
+  std::string pcd_path = m_map_directory_path + sstime.str() + "_active_values_map.pcd";
+
+  PointCloudT::Ptr cloud(new PointCloudT);
+
+  cloud->points.reserve(m_vdb_grid->activeVoxelCount());
+
+  for (typename GridT::ValueOnCIter iter = m_vdb_grid->cbeginValueOn(); iter; ++iter)
+  {
+    openvdb::Vec3d world_coord = m_vdb_grid->indexToWorld(iter.getCoord());
+    world_coord += 0.5 * m_resolution;
+    PointT point;
+    point.x = world_coord.x();
+    point.y = world_coord.y();
+    point.z = world_coord.z();
+    cloud->points.push_back(point);
+  }
+
+  cloud->points.shrink_to_fit();
+  cloud->width  = cloud->points.size();
+  cloud->height = 1;
+
+  if (pcl::io::savePCDFile(pcd_path, *cloud) != 0)
+  {
+    PCL_ERROR("Could not write PCD file.");
+    return false;
+  }
+  std::cout << "Wrote pcd to: " << pcd_path << std::endl;
+  return true;
+}
+
+template <typename TData, typename TConfig>
 bool VDBMapping<TData, TConfig>::loadMap(const std::string& file_path)
 {
   openvdb::io::File file_handle(file_path);

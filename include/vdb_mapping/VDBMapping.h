@@ -107,6 +107,13 @@ public:
   bool saveMap() const;
 
   /*!
+   * \brief Saves the active values of the current map as PCD file
+   *
+   * \returns Saving pcd successfull
+   */
+  bool saveMapToPCD();
+
+  /*!
    * \brief Loads a stored map
    */
   bool loadMap(const std::string& file_path);
