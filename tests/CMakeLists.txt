@@ -22,24 +22,9 @@ endif()
 ## Build ##
 ###########
 
-##
-## Check C++14 support/ enable global pedantic and Wall
-##
-include(DefineCXX14CompilerFlag)
-DEFINE_CXX_14_COMPILER_FLAG(CXX14_FLAG)
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic")
-
-
-##
-## Collect source format files
-##
-include(ClangformatMacros)
-
 add_executable(mapping_tests mapping.cpp)
-target_compile_options(mapping_tests PRIVATE ${CXX14_FLAG})
+target_compile_features(mapping_tests PUBLIC cxx_std_14)
 target_include_directories(mapping_tests PRIVATE ${GTEST_INCLUDE_DIRS})
 target_link_libraries(mapping_tests PRIVATE vdb_mapping::vdb_mapping ${GTEST_LIBRARIES})
 add_test(NAME mapping.tests COMMAND mapping_tests)
 
-add_format_source(${PROJECT_NAME} PATTERN "[a-zA-Z]*.cpp")
-ADD_CLANGFORMAT_TARGET(${PROJECT_NAME})

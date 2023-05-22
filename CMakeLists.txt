@@ -20,30 +20,13 @@ find_package(TBB REQUIRED)
 ## Build ##
 ###########
 
-##
-## Check C++14 support/ enable global pedantic and Wall
-##
-include(DefineCXX14CompilerFlag)
-DEFINE_CXX_14_COMPILER_FLAG(CXX14_FLAG)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic")
-
-##
-## Collect source format files
-##
-include(ClangformatMacros)
-include(ClangtidyMacros)
-add_format_source(${PROJECT_NAME} PATTERN "include/${PROJECT_NAME}/[a-zA-Z]*.h")
-add_format_source(${PROJECT_NAME} PATTERN "src/[a-zA-Z]*.h")
-add_format_source(${PROJECT_NAME} PATTERN "src/[a-zA-Z]*.cpp")
-ADD_CLANGFORMAT_TARGET(${PROJECT_NAME})
-ADD_CLANGTIDY_TARGET(${PROJECT_NAME})
-
 ## Declare a C++ library
 add_library(${PROJECT_NAME} SHARED
   src/OccupancyVDBMapping.cpp 
   )
 
-target_compile_options(${PROJECT_NAME} PUBLIC ${CXX14_FLAG})
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_14)
+target_compile_options(${PROJECT_NAME} PRIVATE -Wall -pedantic)
 
 target_include_directories(${PROJECT_NAME}
   PRIVATE
