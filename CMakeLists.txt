@@ -46,7 +46,7 @@ target_link_libraries(${PROJECT_NAME}
     ${OpenVDB_LIBRARIES}
     ${PCL_LIBRARIES}
     ${TBB_LIBRARIES}
-    -lHalf
+    -lImath
     )
 
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
