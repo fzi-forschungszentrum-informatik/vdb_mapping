@@ -3,7 +3,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules" ${CMAKE_MODULE_
 
 option(BUILDING_TESTS "Build unit tests." ON)
 
-project(vdb_mapping CXX)
+project(vdb_mapping CXX C)
 
 if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
   message("${PROJECT_NAME}: You did not request a specific build type: selecting 'Release'.")
@@ -46,7 +46,7 @@ target_link_libraries(${PROJECT_NAME}
     ${OpenVDB_LIBRARIES}
     ${PCL_LIBRARIES}
     ${TBB_LIBRARIES}
-    -lHalf
+    -lImath
     )
 
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
