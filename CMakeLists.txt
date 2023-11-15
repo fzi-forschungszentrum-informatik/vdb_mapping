@@ -20,29 +20,22 @@ find_package(TBB REQUIRED)
 ## Build ##
 ###########
 
-## Declare a C++ library
-add_library(${PROJECT_NAME} SHARED
-  src/OccupancyVDBMapping.cpp 
-  )
 
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_14)
-target_compile_options(${PROJECT_NAME} PRIVATE -Wall -pedantic)
+add_library(${PROJECT_NAME} INTERFACE)
 
+
+### Declare a C++ library
 target_include_directories(${PROJECT_NAME}
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-    )
-target_include_directories(${PROJECT_NAME}
-  PUBLIC
+  INTERFACE 
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     ${EIGEN3_INCLUDE_DIR}
-    ${OpenVDB_INCLUDE_DIRS}
+    ${OpenVDB_INCLUDE_DIR}
     ${PCL_INCLUDE_DIRS}
     )
 
 target_link_libraries(${PROJECT_NAME}
-  PUBLIC
+  INTERFACE
     ${OpenVDB_LIBRARIES}
     ${PCL_LIBRARIES}
     ${TBB_LIBRARIES}

@@ -88,6 +88,8 @@ protected:
   float m_min_logodds;
 };
 
+
 } // namespace vdb_mapping
 
+#include "OccupancyVDBMapping.hpp"
 #endif /* VDB_MAPPING_OCCUPANCY_VDB_MAPPING_H_INCLUDED */

@@ -27,7 +27,7 @@
 //----------------------------------------------------------------------
 
 
-#include "vdb_mapping/OccupancyVDBMapping.h"
+//#include "vdb_mapping/OccupancyVDBMapping.h"
 
 namespace vdb_mapping {
 
