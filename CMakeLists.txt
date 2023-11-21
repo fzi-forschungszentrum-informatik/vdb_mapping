@@ -30,15 +30,14 @@ target_include_directories(${PROJECT_NAME}
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     ${EIGEN3_INCLUDE_DIR}
-    ${OpenVDB_INCLUDE_DIR}
     ${PCL_INCLUDE_DIRS}
     )
 
 target_link_libraries(${PROJECT_NAME}
   INTERFACE
-    ${OpenVDB_LIBRARIES}
+    OpenVDB::openvdb
+    ${EIGEN3_LIBRARIES}
     ${PCL_LIBRARIES}
-    ${TBB_LIBRARIES}
     -lImath
     )
 
@@ -89,7 +88,8 @@ install(
   FILES
     ${PROJECT_NAME}Config.cmake ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
     CMakeModules/FindOpenVDB.cmake
-    CMakeModules/FindTBB.cmake
+    CMakeModules/OpenVDBUtils.cmake
+    CMakeModules/FindBlosc.cmake
   DESTINATION
     lib/cmake/${PROJECT_NAME}
   )
