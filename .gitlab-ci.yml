@@ -1,16 +1,17 @@
-variables:
-  CI_SCRIPTS_BRANCH: dev
-
-fla_v2:
-  trigger:
-    include:
-      - project: 'continuous_integration/ci_scripts'
-        ref: $CI_SCRIPTS_BRANCH
-        file: '/gitlab-ci-yml/fla_pipeline_v2.yml'
-    strategy: depend
+.build_matrix:
   parallel:
     matrix:
-      - ROS_DISTRO: melodic
-        CI_IMAGE: ids-git.fzi.de:5555/continuous_integration/ci_docker_images/ubuntu_18.04_ros
       - ROS_DISTRO: noetic
         CI_IMAGE: ids-git.fzi.de:5555/continuous_integration/ci_docker_images/ubuntu_20.04_ros
+      - ROS_DISTRO: humble
+        CI_IMAGE: ids-git.fzi.de:5555/continuous_integration/ci_docker_images/ubuntu_22.04_ros2:humble
+      - ROS_DISTRO: iron
+        CI_IMAGE: ids-git.fzi.de:5555/continuous_integration/ci_docker_images/ubuntu_22.04_ros2:iron
+      - ROS_DISTRO: rolling
+        CI_IMAGE: ids-git.fzi.de:5555/continuous_integration/ci_docker_images/ubuntu_22.04_ros2:rolling
+
+include:
+  - project: 'continuous_integration/ci_scripts'
+    ref: master
+    file: '/gitlab-ci-yml/fla_pipeline.yml'
+    strategy: depend
