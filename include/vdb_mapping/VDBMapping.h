@@ -31,6 +31,7 @@
 
 #include <pcl/common/common.h>
 #include <pcl/common/transforms.h>
+#include <pcl/io/pcd_io.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
@@ -76,6 +77,7 @@ public:
 
   VDBMapping()                  = delete;
   VDBMapping(const VDBMapping&) = delete;
+
   VDBMapping& operator=(const VDBMapping&) = delete;
 
   /*!
@@ -106,10 +108,28 @@ public:
   bool saveMap() const;
 
   /*!
+   * \brief Saves the active values of the current map as PCD file
+   *
+   * \returns Saving pcd successfull
+   */
+  bool saveMapToPCD();
+
+  /*!
    * \brief Loads a stored map
    */
   bool loadMap(const std::string& file_path);
 
+  /*!
+   * \brief Loads a stored map from a pcd file
+   *
+   * \param file_path Path to pcd file
+   * \param set_background Specifies if the background should be set
+   * \param clear_map Specifies if the map has to be cleared before inserting data
+   *
+   * \returns Loading of map successfull
+   */
+  bool
+  loadMapFromPCD(const std::string& file_path, const bool set_background, const bool clear_map);
 
   /*!
    * \brief Accumulates a new sensor point cloud to the update grid
@@ -359,6 +379,13 @@ public:
 protected:
   virtual bool updateFreeNode(TData& voxel_value, bool& active) { return false; }
   virtual bool updateOccupiedNode(TData& voxel_value, bool& active) { return false; }
+  virtual void createMapFromPointCloud(const PointCloudT::Ptr& cloud,
+                                       const bool set_background,
+                                       const bool clear_map)
+  {
+    std::cerr << "Not implemented for data type" << std::endl;
+  }
+
   /*!
    * \brief VDB grid pointer
    */

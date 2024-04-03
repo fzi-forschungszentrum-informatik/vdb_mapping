@@ -27,7 +27,7 @@
 //----------------------------------------------------------------------
 
 
-//#include "vdb_mapping/OccupancyVDBMapping.h"
+// #include "vdb_mapping/OccupancyVDBMapping.h"
 
 namespace vdb_mapping {
 
@@ -59,6 +59,45 @@ bool OccupancyVDBMapping::updateOccupiedNode(float& voxel_value, bool& active)
   return true;
 }
 
+void OccupancyVDBMapping::createMapFromPointCloud(const PointCloudT::Ptr& cloud,
+                                                  const bool set_background,
+                                                  const bool clear_map)
+{
+  if (clear_map)
+  {
+    m_vdb_grid->clear();
+  }
+
+  typename GridT::Accessor acc = m_vdb_grid->getAccessor();
+
+  for (auto point : cloud->points)
+  {
+    openvdb::Vec3d index_coord =
+      m_vdb_grid->worldToIndex(openvdb::Vec3d(point.x, point.y, point.z));
+    acc.setValueOn(openvdb::Coord::floor(index_coord), m_max_logodds);
+  }
+  openvdb::CoordBBox bbox = m_vdb_grid->evalActiveVoxelBoundingBox();
+
+  if (set_background)
+  {
+    for (int x = bbox.min().x(); x <= bbox.max().x(); ++x)
+    {
+      for (int y = bbox.min().y(); y <= bbox.max().y(); ++y)
+      {
+        for (int z = bbox.min().z(); z <= bbox.max().z(); ++z)
+        {
+          openvdb::Coord index_coord = openvdb::Coord(x, y, z);
+          if (!acc.isValueOn(index_coord))
+          {
+            acc.setValueOff(index_coord, m_min_logodds);
+          }
+        }
+      }
+    }
+  }
+
+  m_vdb_grid->pruneGrid();
+}
 
 void OccupancyVDBMapping::setConfig(const Config& config)
 {
