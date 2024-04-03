@@ -27,7 +27,7 @@
 //----------------------------------------------------------------------
 
 
-//#include "vdb_mapping/OccupancyVDBMapping.h"
+// #include "vdb_mapping/OccupancyVDBMapping.h"
 
 namespace vdb_mapping {
 
@@ -59,7 +59,7 @@ bool OccupancyVDBMapping::updateOccupiedNode(float& voxel_value, bool& active)
   return true;
 }
 
-void OccupancyVDBMapping::createMapFromPointCloud(const PointCloudT::Ptr cloud,
+void OccupancyVDBMapping::createMapFromPointCloud(const PointCloudT::Ptr& cloud,
                                                   const bool set_background,
                                                   const bool clear_map)
 {

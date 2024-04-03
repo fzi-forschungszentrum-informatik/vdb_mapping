@@ -77,6 +77,7 @@ public:
 
   VDBMapping()                  = delete;
   VDBMapping(const VDBMapping&) = delete;
+
   VDBMapping& operator=(const VDBMapping&) = delete;
 
   /*!
@@ -378,7 +379,7 @@ public:
 protected:
   virtual bool updateFreeNode(TData& voxel_value, bool& active) { return false; }
   virtual bool updateOccupiedNode(TData& voxel_value, bool& active) { return false; }
-  virtual void createMapFromPointCloud(const PointCloudT::Ptr cloud,
+  virtual void createMapFromPointCloud(const PointCloudT::Ptr& cloud,
                                        const bool set_background,
                                        const bool clear_map)
   {

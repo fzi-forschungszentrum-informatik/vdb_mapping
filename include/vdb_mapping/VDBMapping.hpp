@@ -94,11 +94,12 @@ bool VDBMapping<TData, TConfig>::saveMapToPCD()
   for (typename GridT::ValueOnCIter iter = m_vdb_grid->cbeginValueOn(); iter; ++iter)
   {
     openvdb::Vec3d world_coord = m_vdb_grid->indexToWorld(iter.getCoord());
+
     world_coord += 0.5 * m_resolution;
     PointT point;
-    point.x = world_coord.x();
-    point.y = world_coord.y();
-    point.z = world_coord.z();
+    point.x = static_cast<float>(world_coord.x());
+    point.y = static_cast<float>(world_coord.y());
+    point.z = static_cast<float>(world_coord.z());
     cloud->points.push_back(point);
   }
 
