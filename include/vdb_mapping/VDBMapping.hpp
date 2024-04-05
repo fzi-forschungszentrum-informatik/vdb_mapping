@@ -399,6 +399,14 @@ bool VDBMapping<TData, TConfig>::raycastPointCloud(const PointCloudT::ConstPtr& 
     ray_end_world      = openvdb::Vec3d(pt.x, pt.y, pt.z);
     bool max_range_ray = false;
 
+
+    if (std::isnan(ray_end_world.x()) || std::isnan(ray_end_world.y()) ||
+        std::isnan(ray_end_world.z()) || std::isnan(ray_origin_world.x()) ||
+        std::isnan(ray_origin_world.y()) || std::isnan(ray_origin_world.z()))
+    {
+      continue;
+    }
+
     if (raycast_range > 0.0 && (ray_end_world - ray_origin_world).length() > raycast_range)
     {
       ray_end_world = ray_origin_world + (ray_end_world - ray_origin_world).unit() * raycast_range;
@@ -446,10 +454,12 @@ VDBMapping<TData, TConfig>::castRayIntoGrid(const openvdb::Vec3d& ray_origin_wor
 
   RayT ray(ray_origin_index, ray_direction, 0, 1);
   DDAT dda(ray, 0);
-
-  while (dda.step())
+  if (ray_end_index.asVec3d() != ray_origin_index)
   {
-    update_grid_acc.setActiveState(dda.voxel(), true);
+    do
+    {
+      update_grid_acc.setActiveState(dda.voxel(), true);
+    } while(dda.step());
   }
   return ray_end_index;
 }
