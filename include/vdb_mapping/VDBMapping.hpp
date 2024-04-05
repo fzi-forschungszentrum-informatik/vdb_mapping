@@ -459,7 +459,7 @@ VDBMapping<TData, TConfig>::castRayIntoGrid(const openvdb::Vec3d& ray_origin_wor
     do
     {
       update_grid_acc.setActiveState(dda.voxel(), true);
-    } while(dda.step());
+    } while(dda.voxel() != ray_end_index && dda.step());
   }
   return ray_end_index;
 }
