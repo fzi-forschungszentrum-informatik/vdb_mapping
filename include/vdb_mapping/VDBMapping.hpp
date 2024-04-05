@@ -431,9 +431,9 @@ VDBMapping<TData, TConfig>::castRayIntoGrid(const openvdb::Vec3d& ray_origin_wor
                                             const openvdb::Vec3d& ray_end_world,
                                             UpdateGridT::Accessor& update_grid_acc) const
 {
-  // In case that a coodinate is placed directly on the grid a half the resolution is added as offset to push it within the grids boundaries
-  // Currently this does not support tranlational adjustments of the grid since it is not
-  // used within the vdb_mapping framework.
+  // In case that a coodinate is placed directly on the grid a half the resolution is added as
+  // offset to push it within the grids boundaries Currently this does not support tranlational
+  // adjustments of the grid since it is not used within the vdb_mapping framework.
   openvdb::Vec3d adjusted_ray_end_world = ray_end_world;
   if (std::fmod(ray_end_world.x(), m_resolution))
   {
@@ -448,7 +448,8 @@ VDBMapping<TData, TConfig>::castRayIntoGrid(const openvdb::Vec3d& ray_origin_wor
     adjusted_ray_end_world.z() = ray_end_world.z() + (m_resolution / 2.0);
   }
 
-  openvdb::Coord ray_end_index = openvdb::Coord::floor(m_vdb_grid->worldToIndex(adjusted_ray_end_world));
+  openvdb::Coord ray_end_index =
+    openvdb::Coord::floor(m_vdb_grid->worldToIndex(adjusted_ray_end_world));
 
   openvdb::Vec3d ray_direction = (ray_end_index.asVec3d() - ray_origin_index);
 
@@ -459,7 +460,7 @@ VDBMapping<TData, TConfig>::castRayIntoGrid(const openvdb::Vec3d& ray_origin_wor
     do
     {
       update_grid_acc.setActiveState(dda.voxel(), true);
-    } while(dda.voxel() != ray_end_index && dda.step());
+    } while (dda.voxel() != ray_end_index && dda.step());
   }
   return ray_end_index;
 }
