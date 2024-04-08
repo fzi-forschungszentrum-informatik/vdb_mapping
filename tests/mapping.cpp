@@ -108,13 +108,13 @@ TEST(Mapping, InsertMaxRangePoint)
   Eigen::Matrix<double, 3, 1> origin(0, 0, 0);
   map.insertPointCloud(cloud, origin);
   OccupancyVDBMapping::GridT::Accessor acc = map.getGrid()->getAccessor();
-  for (int i = 0; i < 5; ++i)
+  for (int i = 0; i <= (int)(conf.max_range / resolution); ++i)
   {
     openvdb::Coord coord(0, 0, i);
     EXPECT_EQ(acc.getValue(coord), log_miss);
     EXPECT_FALSE(acc.isValueOn(coord));
   }
-  openvdb::Coord coord(0, 0, 5);
+  openvdb::Coord coord(0, 0, (int)(conf.max_range / resolution) + 1);
   EXPECT_EQ(acc.getValue(coord), 0);
   EXPECT_FALSE(acc.isValueOn(coord));
 }
