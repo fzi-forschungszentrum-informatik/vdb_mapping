@@ -389,7 +389,8 @@ bool VDBMapping<TData, TConfig>::raycastPointCloud(const PointCloudT::ConstPtr& 
   // Ray origin in world coordinates
   openvdb::Vec3d ray_origin_world(origin.x(), origin.y(), origin.z());
   // Ray origin in index coordinates
-  Vec3T ray_origin_index(m_vdb_grid->worldToIndex(ray_origin_world));
+  openvdb::Coord buffer = openvdb::Coord::floor(m_vdb_grid->worldToIndex(ray_origin_world));
+  Vec3T ray_origin_index(buffer.x(), buffer.y(), buffer.z());
   // Ray end point in world coordinates
   openvdb::Vec3d ray_end_world;
 
@@ -453,14 +454,15 @@ VDBMapping<TData, TConfig>::castRayIntoGrid(const openvdb::Vec3d& ray_origin_wor
 
   openvdb::Vec3d ray_direction = (ray_end_index.asVec3d() - ray_origin_index);
 
-  RayT ray(ray_origin_index, ray_direction, 0, 1);
+  // Starting the ray from the center of the voxel
+  RayT ray(ray_origin_index + 0.5, ray_direction, 0, 1);
   DDAT dda(ray, 0);
   if (ray_end_index.asVec3d() != ray_origin_index)
   {
     do
     {
       update_grid_acc.setActiveState(dda.voxel(), true);
-    } while (dda.voxel() != ray_end_index && dda.step());
+    } while (dda.step());
   }
   return ray_end_index;
 }
