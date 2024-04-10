@@ -17,7 +17,8 @@ This library requires [OpenVDB](https://www.openvdb.org/) as it is build around 
  ``` bash
  sudo apt install libopenvdb6.2
  ```
-or compile the package from source using the provided [build instructions](https://github.com/AcademySoftwareFoundation/openvdb)
+
+For Ubuntu 22.04, we recommend building OpenVDB v9.1.0 from source using the provided [build instructions](https://github.com/AcademySoftwareFoundation/openvdb)
 
 ### Build instructions
 
