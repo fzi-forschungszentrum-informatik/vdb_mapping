@@ -73,7 +73,6 @@ bool VDBMapping<TData, TConfig>::saveMap() const
   grids.push_back(m_vdb_grid);
   file_handle.write(grids);
   file_handle.close();
-
   return true;
 }
 
@@ -327,6 +326,26 @@ bool VDBMapping<TData, TConfig>::insertPointCloud(const PointCloudT::ConstPtr& c
   resetUpdate();
   return true;
 }
+
+template <typename TData, typename TConfig>
+bool VDBMapping<TData, TConfig>::removePointCloud(const PointCloudT::ConstPtr& cloud)
+{
+  typename GridT::Accessor acc = m_vdb_grid->getAccessor();
+
+  auto delete_point = [&](TData& voxel_value, bool& active) {
+    voxel_value = 0.0;
+    active      = false;
+  };
+
+  for (const PointT& pt : *cloud)
+  {
+    openvdb::Vec3d world_pt(pt.x, pt.y, pt.z);
+    openvdb::Coord index_pt = openvdb::Coord::floor(m_vdb_grid->worldToIndex(world_pt));
+    acc.modifyValueAndActiveState(index_pt, delete_point);
+  }
+  return true;
+}
+
 
 template <typename TData, typename TConfig>
 void VDBMapping<TData, TConfig>::accumulateUpdate(const PointCloudT::ConstPtr& cloud,

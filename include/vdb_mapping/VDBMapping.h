@@ -183,6 +183,8 @@ public:
                         UpdateGridT::Ptr& update_grid,
                         UpdateGridT::Ptr& overwrite_grid);
 
+  bool removePointCloud(const PointCloudT::ConstPtr& cloud);
+
   /*!
    * \brief  Raycasts a Pointcloud into an update Grid
    *
