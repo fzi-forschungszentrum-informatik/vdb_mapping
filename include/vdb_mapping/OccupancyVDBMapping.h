@@ -61,6 +61,8 @@ public:
 protected:
   inline bool updateFreeNode(float& voxel_value, bool& active) override;
   inline bool updateOccupiedNode(float& voxel_value, bool& active) override;
+  inline bool setNodeToFree(float& voxel_value, bool& active) override;
+  inline bool setNodeToOccupied(float& voxel_value, bool& active) override;
 
   inline void createMapFromPointCloud(const PointCloudT::Ptr& cloud,
                                       const bool set_background,

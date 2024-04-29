@@ -328,20 +328,27 @@ bool VDBMapping<TData, TConfig>::insertPointCloud(const PointCloudT::ConstPtr& c
 }
 
 template <typename TData, typename TConfig>
-bool VDBMapping<TData, TConfig>::removePointCloud(const PointCloudT::ConstPtr& cloud)
+bool VDBMapping<TData, TConfig>::removePointsFromGrid(const PointCloudT::ConstPtr& cloud)
 {
   typename GridT::Accessor acc = m_vdb_grid->getAccessor();
-
-  auto delete_point = [&](TData& voxel_value, bool& active) {
-    voxel_value = 0.0;
-    active      = false;
-  };
-
   for (const PointT& pt : *cloud)
   {
     openvdb::Vec3d world_pt(pt.x, pt.y, pt.z);
     openvdb::Coord index_pt = openvdb::Coord::floor(m_vdb_grid->worldToIndex(world_pt));
-    acc.modifyValueAndActiveState(index_pt, delete_point);
+    acc.modifyValueAndActiveState(index_pt, setNodeToFree);
+  }
+  return true;
+}
+
+template <typename TData, typename TConfig>
+bool VDBMapping<TData, TConfig>::addPointsToGrid(const PointCloudT::ConstPtr& cloud)
+{
+  typename GridT::Accessor acc = m_vdb_grid->getAccessor();
+  for (const PointT& pt : *cloud)
+  {
+    openvdb::Vec3d world_pt(pt.x, pt.y, pt.z);
+    openvdb::Coord index_pt = openvdb::Coord::floor(m_vdb_grid->worldToIndex(world_pt));
+    acc.modifyValueAndActiveState(index_pt, setNodeToOccupied);
   }
   return true;
 }
