@@ -183,6 +183,9 @@ public:
                         UpdateGridT::Ptr& update_grid,
                         UpdateGridT::Ptr& overwrite_grid);
 
+  bool removePointsFromGrid(const PointCloudT::ConstPtr& cloud);
+  bool addPointsToGrid(const PointCloudT::ConstPtr& cloud);
+
   /*!
    * \brief  Raycasts a Pointcloud into an update Grid
    *
@@ -379,6 +382,9 @@ public:
 protected:
   virtual bool updateFreeNode(TData& voxel_value, bool& active) { return false; }
   virtual bool updateOccupiedNode(TData& voxel_value, bool& active) { return false; }
+  virtual bool setNodeToFree(TData& voxel_value, bool& active) { return false; }
+  virtual bool setNodeToOccupied(TData& voxel_value, bool& active) { return false; }
+
   virtual void createMapFromPointCloud(const PointCloudT::Ptr& cloud,
                                        const bool set_background,
                                        const bool clear_map)

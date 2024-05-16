@@ -27,7 +27,7 @@
 //----------------------------------------------------------------------
 
 
-// #include "vdb_mapping/OccupancyVDBMapping.h"
+#include "vdb_mapping/OccupancyVDBMapping.h"
 
 namespace vdb_mapping {
 
@@ -56,6 +56,20 @@ bool OccupancyVDBMapping::updateOccupiedNode(float& voxel_value, bool& active)
       voxel_value = m_max_logodds;
     }
   }
+  return true;
+}
+
+bool OccupancyVDBMapping::setNodeToFree(float& voxel_value, bool& active)
+{
+  voxel_value = m_min_logodds;
+  active      = false;
+  return true;
+}
+
+bool OccupancyVDBMapping::setNodeToOccupied(float& voxel_value, bool& active)
+{
+  voxel_value = m_max_logodds;
+  active      = true;
   return true;
 }
 
