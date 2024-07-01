@@ -24,6 +24,16 @@ For Ubuntu 22.04, we recommend building OpenVDB v9.1.0 from source using the pro
 
 The library can be either used as plain c++ library or in combination with the afore mentioned ROS wrapper.
 
+#### Dependencies
+
+The library requires the following dependencies to build correctly
+``` bash
+apt-get install -y libeigen3-dev
+apt-get install -y libtbb-dev
+apt-get install -y libpcl-dev
+apt-get install -y libilmbase-dev
+```
+
 #### Plain cmake
 To build this package as a standalone library, follow the usual cmake building steps:
 ``` bash
