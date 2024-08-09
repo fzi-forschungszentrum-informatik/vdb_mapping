@@ -384,6 +384,12 @@ public:
 
   std::string decompressByteArray(const std::vector<uint8_t>& byte_array) const;
 
+  template <typename TGrid>
+  std::vector<uint8_t> gridToByteArray(typename TGrid::Ptr grid);
+
+  template <typename TGrid>
+  typename TGrid::Ptr byteArrayToGrid(std::vector<uint8_t> byte_array);
+
 
 protected:
   virtual bool updateFreeNode(TData& voxel_value, bool& active) { return false; }
