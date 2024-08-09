@@ -605,6 +605,57 @@ void VDBMapping<TData, TConfig>::overwriteMap(const UpdateGridT::Ptr& update_gri
 }
 
 template <typename TData, typename TConfig>
+std::vector<uint8_t> VDBMapping<TData, TConfig>::compressString(const std::string& string) const
+{
+  auto uncompressed = std::vector<uint8_t>(string.begin(), string.end());
+
+  // Create buffer with enough size for worst case scenario
+  size_t len = ZSTD_compressBound(uncompressed.size());
+  std::vector<uint8_t> compressed(len);
+
+  int ret = ZSTD_compress(
+    compressed.data(), len, uncompressed.data(), uncompressed.size(), m_compression_level);
+
+
+  if (ZSTD_isError(ret))
+  {
+    std::cerr << "Compression using ZSTD failed: " << ZSTD_getErrorName(ret)
+              << " , sending uncompressed byte array" << std::endl;
+    return uncompressed;
+  }
+
+  // Resize compressed buffer to actual compressed size
+  compressed.resize(ret);
+  return compressed;
+}
+
+template <typename TData, typename TConfig>
+std::string
+VDBMapping<TData, TConfig>::decompressByteArray(const std::vector<uint8_t>& byte_array) const
+{
+  std::size_t len = ZSTD_getDecompressedSize(byte_array.data(), byte_array.size());
+  std::vector<uint8_t> uncompressed(len);
+
+  std::size_t size =
+    ZSTD_decompress(uncompressed.data(), len, byte_array.data(), byte_array.size());
+
+
+  std::string map_str;
+  if (ZSTD_isError(size))
+  {
+    std::cerr << "Could not decompress map using ZSTD failed: " << ZSTD_getErrorName(size)
+              << " , returning raw data" << std::endl;
+    map_str = std::string(byte_array.begin(), byte_array.end());
+  }
+  else
+  {
+    map_str = std::string(uncompressed.begin(), uncompressed.end());
+  }
+
+  return map_str;
+}
+
+template <typename TData, typename TConfig>
 void VDBMapping<TData, TConfig>::setConfig(const TConfig& config)
 {
   if (config.max_range < 0.0)

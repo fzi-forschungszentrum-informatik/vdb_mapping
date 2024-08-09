@@ -15,6 +15,7 @@ find_package(Eigen3 REQUIRED)
 find_package(OpenVDB REQUIRED)
 find_package(PCL REQUIRED)
 find_package(TBB REQUIRED)
+find_package(ZSTD REQUIRED)
 
 ###########
 ## Build ##
@@ -31,6 +32,7 @@ target_include_directories(${PROJECT_NAME}
     $<INSTALL_INTERFACE:include>
     ${EIGEN3_INCLUDE_DIR}
     ${PCL_INCLUDE_DIRS}
+    ${ZSTD_INCLUDE_DIRS}
     )
 
 target_link_libraries(${PROJECT_NAME}
@@ -38,6 +40,7 @@ target_link_libraries(${PROJECT_NAME}
     OpenVDB::openvdb
     ${EIGEN3_LIBRARIES}
     ${PCL_LIBRARIES}
+    ${ZSTD_LIBRARIES}
     -lImath
     )
 

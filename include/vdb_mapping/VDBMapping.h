@@ -46,6 +46,8 @@
 #include <openvdb/tools/Clip.h>
 #include <openvdb/tools/Morphology.h>
 
+#include <zstd.h>
+
 namespace vdb_mapping {
 
 
@@ -378,6 +380,10 @@ public:
    */
   virtual void setConfig(const TConfig& config);
 
+  std::vector<uint8_t> compressString(const std::string& string) const;
+
+  std::string decompressByteArray(const std::vector<uint8_t>& byte_array) const;
+
 
 protected:
   virtual bool updateFreeNode(TData& voxel_value, bool& active) { return false; }
@@ -414,6 +420,8 @@ protected:
   bool m_config_set;
 
   UpdateGridT::Ptr m_update_grid;
+
+  unsigned int m_compression_level = 1;
 };
 
 #include "VDBMapping.hpp"
