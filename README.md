@@ -7,18 +7,10 @@ The VDB Mapping core library was primarily developed to be used in combination w
 ## Getting Started
 
 ### Requirements
-This library requires [OpenVDB](https://www.openvdb.org/) as it is build around it. This library was initially developed using Version 5.0 and should work with all versions above.  
- Either install the apt package:  
- Ubuntu 18.04
- ``` bash
- sudo apt install libopenvdb5.0
- ```
- Ubuntu 20.04
- ``` bash
- sudo apt install libopenvdb6.2
- ```
+This library requires [OpenVDB](https://www.openvdb.org/) as it is build around it. 
+This library was initially developed using Version 5.0 and should work with all versions above.  
 
-For Ubuntu 22.04, we recommend building OpenVDB v9.1.0 from source using the provided [build instructions](https://github.com/AcademySoftwareFoundation/openvdb)
+As the apt packages are quite outdated for most systems, we recommend building at least OpenVDB v9.0.0 from source using the provided [build instructions](https://github.com/AcademySoftwareFoundation/openvdb)
 
 ### Build instructions
 
