@@ -3,12 +3,14 @@
     matrix:
       - ROS_DISTRO: noetic
         CI_IMAGE: ids-git.fzi.de:5555/continuous_integration/ci_docker_images/ubuntu_20.04_ros
+      - ROS_DISTRO: jazzy
+        CI_IMAGE: ids-git.fzi.de:5555/continuous_integration/ci_docker_images/ubuntu_24.04_ros2:jazzy
       - ROS_DISTRO: humble
         CI_IMAGE: ids-git.fzi.de:5555/continuous_integration/ci_docker_images/ubuntu_22.04_ros2:humble
       - ROS_DISTRO: iron
         CI_IMAGE: ids-git.fzi.de:5555/continuous_integration/ci_docker_images/ubuntu_22.04_ros2:iron
       - ROS_DISTRO: rolling
-        CI_IMAGE: ids-git.fzi.de:5555/continuous_integration/ci_docker_images/ubuntu_22.04_ros2:rolling
+        CI_IMAGE: ids-git.fzi.de:5555/continuous_integration/ci_docker_images/ubuntu_24.04_ros2:rolling
 
 include:
   - project: 'continuous_integration/ci_scripts'
