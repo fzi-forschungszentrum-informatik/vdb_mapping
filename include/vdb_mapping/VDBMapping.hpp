@@ -240,11 +240,11 @@ typename VDBMapping<TData, TConfig>::GridT::Ptr VDBMapping<TData, TConfig>::getM
 
 template <typename TData, typename TConfig>
 template <typename TResultGrid>
-typename TResultGrid::Ptr VDBMapping<TData, TConfig>::getMapSection(
-  const Eigen::Matrix<double, 3, 1>& min_boundary,
-  const Eigen::Matrix<double, 3, 1>& max_boundary,
-  const Eigen::Matrix<double, 4, 4>& map_to_reference_tf,
-  const bool full_grid) const
+typename TResultGrid::Ptr
+VDBMapping<TData, TConfig>::getMapSection(const Eigen::Matrix<double, 3, 1>& min_boundary,
+                                          const Eigen::Matrix<double, 3, 1>& max_boundary,
+                                          const Eigen::Matrix<double, 4, 4>& map_to_reference_tf,
+                                          const bool full_grid) const
 {
   typename TResultGrid::Ptr temp_grid = TResultGrid::create(0);
   temp_grid->setTransform(openvdb::math::Transform::createLinearTransform(m_resolution));
@@ -254,29 +254,32 @@ typename TResultGrid::Ptr VDBMapping<TData, TConfig>::getMapSection(
   openvdb::CoordBBox bounding_box(
     createIndexBoundingBox(min_boundary, max_boundary, map_to_reference_tf));
 
-  for(auto leafIter = m_vdb_grid->tree().cbeginLeaf(); leafIter; ++leafIter)
+  for (auto leafIter = m_vdb_grid->tree().cbeginLeaf(); leafIter; ++leafIter)
   {
     openvdb::CoordBBox bbox;
     bbox = leafIter.getLeaf()->getNodeBoundingBox();
 
-    if(bbox.hasOverlap(bounding_box))
+    if (bbox.hasOverlap(bounding_box))
     {
-      if(full_grid)
+      if (full_grid)
       {
         for (auto iter = leafIter->cbeginValueAll(); iter; ++iter)
         {
           if (bounding_box.isInside(iter.getCoord()))
           {
-            if(iter.isValueOn()){
+            if (iter.isValueOn())
+            {
               temp_acc.setValueOn(iter.getCoord(), iter.getValue());
             }
-            else {
+            else
+            {
               temp_acc.setValueOff(iter.getCoord(), iter.getValue());
             }
           }
         }
       }
-      else {
+      else
+      {
         for (auto iter = leafIter->cbeginValueOn(); iter; ++iter)
         {
           if (bounding_box.isInside(iter.getCoord()))
@@ -296,20 +299,19 @@ typename TResultGrid::Ptr VDBMapping<TData, TConfig>::getMapSection(
 }
 
 template <typename TData, typename TConfig>
-void VDBMapping<TData, TConfig>::applyMapSectionGrid(
-  const typename GridT::Ptr section)
+void VDBMapping<TData, TConfig>::applyMapSectionGrid(const typename GridT::Ptr section)
 {
   typename GridT::Accessor section_acc = section->getAccessor();
-  typename GridT::Accessor acc = m_vdb_grid->getAccessor();
-  
+  typename GridT::Accessor acc         = m_vdb_grid->getAccessor();
+
   for (auto iter = section->cbeginValueAll(); iter; ++iter)
   {
     openvdb::Coord coord = iter.getCoord();
-    if(section_acc.isValueOn(coord))
+    if (section_acc.isValueOn(coord))
     {
       acc.setValueOn(coord, section_acc.getValue(coord));
     }
-    else 
+    else
     {
       acc.setValueOff(coord, section_acc.getValue(coord));
     }
@@ -317,11 +319,10 @@ void VDBMapping<TData, TConfig>::applyMapSectionGrid(
 }
 
 template <typename TData, typename TConfig>
-void VDBMapping<TData, TConfig>::applyMapSectionUpdateGrid(
-  const typename UpdateGridT::Ptr section)
+void VDBMapping<TData, TConfig>::applyMapSectionUpdateGrid(const typename UpdateGridT::Ptr section)
 {
   typename UpdateGridT::Accessor section_acc = section->getAccessor();
-  typename GridT::Accessor acc = m_vdb_grid->getAccessor();
+  typename GridT::Accessor acc               = m_vdb_grid->getAccessor();
   openvdb::Vec3d min = section->template metaValue<openvdb::Vec3d>("bb_min");
   openvdb::Vec3d max = section->template metaValue<openvdb::Vec3d>("bb_max");
   openvdb::CoordBBox bbox(openvdb::Coord::floor(min), openvdb::Coord::floor(max));

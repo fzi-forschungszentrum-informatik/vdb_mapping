@@ -327,11 +327,10 @@ public:
    *
    * \returns Grid containing the information within the bounding box
    */
-  typename GridT::Ptr
-  getMapSectionGrid(const Eigen::Matrix<double, 3, 1>& min_boundary,
-                    const Eigen::Matrix<double, 3, 1>& max_boundary,
-                    const Eigen::Matrix<double, 4, 4>& map_to_reference_tf,
-                    const bool full_grid = false) const;
+  typename GridT::Ptr getMapSectionGrid(const Eigen::Matrix<double, 3, 1>& min_boundary,
+                                        const Eigen::Matrix<double, 3, 1>& max_boundary,
+                                        const Eigen::Matrix<double, 4, 4>& map_to_reference_tf,
+                                        const bool full_grid = false) const;
   /*!
    * \brief Generates a grid or update grid from a bounding box and a reference frame
    *
@@ -344,11 +343,10 @@ public:
    * \returns Grid/UpdateGrid containing the information within the bounding box
    */
   template <typename TResultGrid>
-  typename TResultGrid::Ptr
-  getMapSection(const Eigen::Matrix<double, 3, 1>& min_boundary,
-                const Eigen::Matrix<double, 3, 1>& max_boundary,
-                const Eigen::Matrix<double, 4, 4>& map_to_reference_tf,
-                const bool full_grid = false) const;
+  typename TResultGrid::Ptr getMapSection(const Eigen::Matrix<double, 3, 1>& min_boundary,
+                                          const Eigen::Matrix<double, 3, 1>& max_boundary,
+                                          const Eigen::Matrix<double, 4, 4>& map_to_reference_tf,
+                                          const bool full_grid = false) const;
 
   /*!
    * \brief Applies a map section grid to the map
@@ -366,8 +364,7 @@ public:
    * of the section is encoded in the grids meta information
    *
    */
-  void
-  applyMapSectionUpdateGrid(const typename UpdateGridT::Ptr section);
+  void applyMapSectionUpdateGrid(const typename UpdateGridT::Ptr section);
 
   /*!
    * \brief Handles changing the mapping config
