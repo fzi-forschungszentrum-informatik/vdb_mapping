@@ -241,9 +241,10 @@ template <typename TResultGrid>
 typename TResultGrid::Ptr VDBMapping<TData, TConfig>::getMapSection(
   const Eigen::Matrix<double, 3, 1>& min_boundary,
   const Eigen::Matrix<double, 3, 1>& max_boundary,
-  const Eigen::Matrix<double, 4, 4>& map_to_reference_tf) const
+  const Eigen::Matrix<double, 4, 4>& map_to_reference_tf,
+  const bool full_grid) const
 {
-  typename TResultGrid::Ptr temp_grid = TResultGrid::create(false);
+  typename TResultGrid::Ptr temp_grid = TResultGrid::create(0);
   temp_grid->setTransform(openvdb::math::Transform::createLinearTransform(m_resolution));
 
   typename TResultGrid::Accessor temp_acc = temp_grid->getAccessor();
@@ -251,11 +252,37 @@ typename TResultGrid::Ptr VDBMapping<TData, TConfig>::getMapSection(
   openvdb::CoordBBox bounding_box(
     createIndexBoundingBox(min_boundary, max_boundary, map_to_reference_tf));
 
-  for (auto iter = m_vdb_grid->cbeginValueOn(); iter; ++iter)
+  for(auto leafIter = m_vdb_grid->tree().cbeginLeaf(); leafIter; ++leafIter)
   {
-    if (bounding_box.isInside(iter.getCoord()))
+    openvdb::CoordBBox bbox;
+    bbox = leafIter.getLeaf()->getNodeBoundingBox();
+
+    if(bbox.hasOverlap(bounding_box))
     {
-      temp_acc.setValueOn(iter.getCoord(), true);
+      if(full_grid)
+      {
+        for (auto iter = leafIter->cbeginValueAll(); iter; ++iter)
+        {
+          if (bounding_box.isInside(iter.getCoord()))
+          {
+            if(iter.isValueOn()){
+              temp_acc.setValueOn(iter.getCoord(), iter.getValue());
+            }
+            else {
+              temp_acc.setValueOff(iter.getCoord(), iter.getValue());
+            }
+          }
+        }
+      }
+      else {
+        for (auto iter = leafIter->cbeginValueOn(); iter; ++iter)
+        {
+          if (bounding_box.isInside(iter.getCoord()))
+          {
+            temp_acc.setValueOn(iter.getCoord(), true);
+          }
+        }
+      }
     }
   }
 
