@@ -220,20 +220,22 @@ typename VDBMapping<TData, TConfig>::UpdateGridT::Ptr
 VDBMapping<TData, TConfig>::getMapSectionUpdateGrid(
   const Eigen::Matrix<double, 3, 1>& min_boundary,
   const Eigen::Matrix<double, 3, 1>& max_boundary,
-  const Eigen::Matrix<double, 4, 4>& map_to_reference_tf) const
+  const Eigen::Matrix<double, 4, 4>& map_to_reference_tf,
+  const bool full_grid) const
 {
   return getMapSection<typename VDBMapping<TData, TConfig>::UpdateGridT>(
-    min_boundary, max_boundary, map_to_reference_tf);
+    min_boundary, max_boundary, map_to_reference_tf, full_grid);
 }
 
 template <typename TData, typename TConfig>
 typename VDBMapping<TData, TConfig>::GridT::Ptr VDBMapping<TData, TConfig>::getMapSectionGrid(
   const Eigen::Matrix<double, 3, 1>& min_boundary,
   const Eigen::Matrix<double, 3, 1>& max_boundary,
-  const Eigen::Matrix<double, 4, 4>& map_to_reference_tf) const
+  const Eigen::Matrix<double, 4, 4>& map_to_reference_tf,
+  const bool full_grid) const
 {
   return getMapSection<typename VDBMapping<TData, TConfig>::GridT>(
-    min_boundary, max_boundary, map_to_reference_tf);
+    min_boundary, max_boundary, map_to_reference_tf, full_grid);
 }
 
 template <typename TData, typename TConfig>
@@ -295,25 +297,31 @@ typename TResultGrid::Ptr VDBMapping<TData, TConfig>::getMapSection(
 
 template <typename TData, typename TConfig>
 void VDBMapping<TData, TConfig>::applyMapSectionGrid(
-  const typename VDBMapping<TData, TConfig>::GridT::Ptr section)
+  const typename GridT::Ptr section)
 {
-  applyMapSection<typename VDBMapping<TData, TConfig>::GridT>(section);
+  typename GridT::Accessor section_acc = section->getAccessor();
+  typename GridT::Accessor acc = m_vdb_grid->getAccessor();
+  
+  for (auto iter = section->cbeginValueAll(); iter; ++iter)
+  {
+    openvdb::Coord coord = iter.getCoord();
+    if(section_acc.isValueOn(coord))
+    {
+      acc.setValueOn(coord, section_acc.getValue(coord));
+    }
+    else 
+    {
+      acc.setValueOff(coord, section_acc.getValue(coord));
+    }
+  }
 }
 
 template <typename TData, typename TConfig>
 void VDBMapping<TData, TConfig>::applyMapSectionUpdateGrid(
-  const typename VDBMapping<TData, TConfig>::UpdateGridT::Ptr section)
+  const typename UpdateGridT::Ptr section)
 {
-  applyMapSection<typename VDBMapping<TData, TConfig>::UpdateGridT>(section);
-}
-
-template <typename TData, typename TConfig>
-template <typename TSectionGrid>
-void VDBMapping<TData, TConfig>::applyMapSection(typename TSectionGrid::Ptr section)
-{
-  typename TSectionGrid::Accessor section_acc = section->getAccessor();
-  typename GridT::Accessor acc                = m_vdb_grid->getAccessor();
-
+  typename UpdateGridT::Accessor section_acc = section->getAccessor();
+  typename GridT::Accessor acc = m_vdb_grid->getAccessor();
   openvdb::Vec3d min = section->template metaValue<openvdb::Vec3d>("bb_min");
   openvdb::Vec3d max = section->template metaValue<openvdb::Vec3d>("bb_max");
   openvdb::CoordBBox bbox(openvdb::Coord::floor(min), openvdb::Coord::floor(max));
@@ -330,7 +338,6 @@ void VDBMapping<TData, TConfig>::applyMapSection(typename TSectionGrid::Ptr sect
     acc.setActiveState(iter.getCoord(), true);
   }
 }
-
 
 template <typename TData, typename TConfig>
 bool VDBMapping<TData, TConfig>::insertPointCloud(const PointCloudT::ConstPtr& cloud,

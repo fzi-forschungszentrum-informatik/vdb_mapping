@@ -308,26 +308,30 @@ public:
    * \param min_boundary Minimum boundary of the box
    * \param max_boundary Maximum boundary of the box
    * \param map_to_reference_tf Transform from map to reference frame
+   * \param full_grid Specifies whether the entire grid or just the active values should be return
    *
    * \returns Update Grid containing the information within the bounding box
    */
   typename UpdateGridT::Ptr
   getMapSectionUpdateGrid(const Eigen::Matrix<double, 3, 1>& min_boundary,
                           const Eigen::Matrix<double, 3, 1>& max_boundary,
-                          const Eigen::Matrix<double, 4, 4>& map_to_reference_tf) const;
+                          const Eigen::Matrix<double, 4, 4>& map_to_reference_tf,
+                          const bool full_grid = false) const;
   /*!
    * \brief Generates a grid from a bounding box and a reference frame
    *
    * \param min_boundary Minimum boundary of the box
    * \param max_boundary Maximum boundary of the box
    * \param map_to_reference_tf Transform from map to reference frame
+   * \param full_grid Specifies whether the entire grid or just the active values should be return
    *
    * \returns Grid containing the information within the bounding box
    */
   typename GridT::Ptr
   getMapSectionGrid(const Eigen::Matrix<double, 3, 1>& min_boundary,
                     const Eigen::Matrix<double, 3, 1>& max_boundary,
-                    const Eigen::Matrix<double, 4, 4>& map_to_reference_tf) const;
+                    const Eigen::Matrix<double, 4, 4>& map_to_reference_tf,
+                    const bool full_grid = false) const;
   /*!
    * \brief Generates a grid or update grid from a bounding box and a reference frame
    *
@@ -335,6 +339,7 @@ public:
    * \param min_boundary Minimum boundary of the box
    * \param max_boundary Maximum boundary of the box
    * \param map_to_reference_tf Transform from map to reference frame
+   * \param full_grid Specifies whether the entire grid or just the active values should be return
    *
    * \returns Grid/UpdateGrid containing the information within the bounding box
    */
@@ -342,7 +347,8 @@ public:
   typename TResultGrid::Ptr
   getMapSection(const Eigen::Matrix<double, 3, 1>& min_boundary,
                 const Eigen::Matrix<double, 3, 1>& max_boundary,
-                const Eigen::Matrix<double, 4, 4>& map_to_reference_tf) const;
+                const Eigen::Matrix<double, 4, 4>& map_to_reference_tf,
+                const bool full_grid = false) const;
 
   /*!
    * \brief Applies a map section grid to the map
@@ -351,7 +357,7 @@ public:
    * of the section is encoded in the grids meta information
    *
    */
-  void applyMapSectionGrid(const typename VDBMapping<TData, TConfig>::GridT::Ptr section);
+  void applyMapSectionGrid(const typename GridT::Ptr section);
 
   /*!
    * \brief Applies a map section update grid to the map
@@ -361,17 +367,7 @@ public:
    *
    */
   void
-  applyMapSectionUpdateGrid(const typename VDBMapping<TData, TConfig>::UpdateGridT::Ptr section);
-
-  /*!
-   * \brief Applies a map section to the map
-   *
-   * \param section Section grid containing the information about part of the map. The boundary box
-   * of the section is encoded in the grids meta information
-   *
-   */
-  template <typename TSectionGrid>
-  void applyMapSection(typename TSectionGrid::Ptr section);
+  applyMapSectionUpdateGrid(const typename UpdateGridT::Ptr section);
 
   /*!
    * \brief Handles changing the mapping config
