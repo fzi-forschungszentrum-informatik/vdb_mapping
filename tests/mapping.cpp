@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include <vdb_mapping/OccupancyVDBMapping.h>
+#include <vdb_mapping/OccupancyVDBMapping.hpp>
 
 namespace vdb_mapping {
 
