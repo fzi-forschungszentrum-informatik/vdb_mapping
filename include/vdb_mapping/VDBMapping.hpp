@@ -754,16 +754,16 @@ public:
     openvdb::CoordBBox bounding_box(
       createIndexBoundingBox(min_boundary, max_boundary, map_to_reference_tf));
 
-    for (auto leafIter = m_vdb_grid->tree().cbeginLeaf(); leafIter; ++leafIter)
+    for (auto leaf_iter = m_vdb_grid->tree().cbeginLeaf(); leaf_iter; ++leaf_iter)
     {
       openvdb::CoordBBox bbox;
-      bbox = leafIter.getLeaf()->getNodeBoundingBox();
+      bbox = leaf_iter.getLeaf()->getNodeBoundingBox();
 
       if (bbox.hasOverlap(bounding_box))
       {
         if (full_grid)
         {
-          for (auto iter = leafIter->cbeginValueAll(); iter; ++iter)
+          for (auto iter = leaf_iter->cbeginValueAll(); iter; ++iter)
           {
             if (bounding_box.isInside(iter.getCoord()))
             {
@@ -780,7 +780,7 @@ public:
         }
         else
         {
-          for (auto iter = leafIter->cbeginValueOn(); iter; ++iter)
+          for (auto iter = leaf_iter->cbeginValueOn(); iter; ++iter)
           {
             if (bounding_box.isInside(iter.getCoord()))
             {
