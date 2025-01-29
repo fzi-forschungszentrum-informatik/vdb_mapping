@@ -409,8 +409,7 @@ public:
     // Ray origin in world coordinates
     openvdb::Vec3d ray_origin_world(origin.x(), origin.y(), origin.z());
     // Ray origin in index coordinates
-    openvdb::Coord buffer = openvdb::Coord::floor(m_vdb_grid->worldToIndex(ray_origin_world));
-    Vec3T ray_origin_index(buffer.x(), buffer.y(), buffer.z());
+    openvdb::Coord ray_origin_index = this->worldToIndex(ray_origin_world);
     // Ray end point in world coordinates
     openvdb::Vec3d ray_end_world;
 
@@ -435,8 +434,8 @@ public:
         max_range_ray = true;
       }
 
-      openvdb::Coord ray_end_index =
-        castRayIntoGrid(ray_origin_world, ray_origin_index, ray_end_world, update_grid_acc);
+      openvdb::Coord ray_end_index = this->worldToIndex(ray_end_world);
+      castRayIntoGrid(ray_origin_index, ray_end_index, update_grid_acc);
 
       if (!max_range_ray)
       {
@@ -458,44 +457,43 @@ public:
    *
    * \returns Final visited index coordinate
    */
-  openvdb::Coord castRayIntoGrid(const openvdb::Vec3d& ray_origin_world,
-                                 const Vec3T& ray_origin_index,
-                                 const openvdb::Vec3d& ray_end_world,
-                                 UpdateGridT::Accessor& update_grid_acc) const
+  void castRayIntoGrid(const openvdb::Coord& ray_origin_index,
+                       const openvdb::Coord& ray_end_index,
+                       UpdateGridT::Accessor& update_grid_acc) const
   {
-    // In case that a coodinate is placed directly on the grid a half the resolution is added as
-    // offset to push it within the grids boundaries Currently this does not support tranlational
-    // adjustments of the grid since it is not used within the vdb_mapping framework.
-    openvdb::Vec3d adjusted_ray_end_world = ray_end_world;
-    if (std::fmod(ray_end_world.x(), m_resolution))
-    {
-      adjusted_ray_end_world.x() = ray_end_world.x() + (m_resolution / 2.0);
-    }
-    if (std::fmod(ray_end_world.y(), m_resolution))
-    {
-      adjusted_ray_end_world.y() = ray_end_world.y() + (m_resolution / 2.0);
-    }
-    if (std::fmod(ray_end_world.z(), m_resolution))
-    {
-      adjusted_ray_end_world.z() = ray_end_world.z() + (m_resolution / 2.0);
-    }
-
-    openvdb::Coord ray_end_index =
-      openvdb::Coord::floor(m_vdb_grid->worldToIndex(adjusted_ray_end_world));
-
     openvdb::Vec3d ray_direction = (ray_end_index.asVec3d() - ray_origin_index);
 
     // Starting the ray from the center of the voxel
-    RayT ray(ray_origin_index + 0.5, ray_direction, 0, 1);
+    RayT ray(ray_origin_index.asVec3d() + 0.5, ray_direction, 0, 1);
     DDAT dda(ray, 0);
-    if (ray_end_index.asVec3d() != ray_origin_index)
+    if (ray_end_index != ray_origin_index)
     {
       do
       {
         update_grid_acc.setActiveState(dda.voxel(), true);
       } while (dda.step());
     }
-    return ray_end_index;
+  }
+
+  openvdb::Coord worldToIndex(const openvdb::Vec3d& world_coordinate) const
+  {
+    openvdb::Vec3d adjusted_world_coordinate = world_coordinate;
+    if (std::fmod(adjusted_world_coordinate.x(), m_resolution))
+    {
+      adjusted_world_coordinate.x() = adjusted_world_coordinate.x() + (m_resolution / 2.0);
+    }
+    if (std::fmod(adjusted_world_coordinate.y(), m_resolution))
+    {
+      adjusted_world_coordinate.y() = adjusted_world_coordinate.y() + (m_resolution / 2.0);
+    }
+    if (std::fmod(adjusted_world_coordinate.z(), m_resolution))
+    {
+      adjusted_world_coordinate.z() = adjusted_world_coordinate.z() + (m_resolution / 2.0);
+    }
+    openvdb::Coord index_coordinate =
+      openvdb::Coord::floor(m_vdb_grid->worldToIndex(adjusted_world_coordinate));
+
+    return index_coordinate;
   }
 
   bool raytrace(const openvdb::Vec3d& ray_origin_world,
