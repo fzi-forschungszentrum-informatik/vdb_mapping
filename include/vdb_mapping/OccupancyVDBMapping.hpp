@@ -127,6 +127,18 @@ protected:
     active      = true;
     return true;
   }
+  inline bool setNodeState(float& voxel_value, bool& active) override
+  {
+    if(voxel_value > m_logodds_thres_max)
+    {
+      active = true;
+    }
+    if(voxel_value < m_logodds_thres_min)
+    {
+      active = false;
+    }
+    return true;
+  }
 
   inline void createMapFromPointCloud(const PointCloudT::Ptr& cloud,
                                       const bool set_background,

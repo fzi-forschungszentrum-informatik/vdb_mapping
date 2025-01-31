@@ -91,6 +91,7 @@ public:
   VDBMapping(const double resolution)
     : m_resolution(resolution)
     , m_config_set(false)
+    , m_artificial_areas_present(false)
   {
     m_map_mutex                    = std::make_shared<std::shared_mutex>();
     m_update_grid_mutex            = std::make_shared<std::shared_mutex>();
@@ -108,6 +109,7 @@ public:
     m_vdb_grid               = createVDBMap(m_resolution);
     m_update_grid            = UpdateGridT::create(false);
     m_consumable_update_grid = UpdateGridT::create(false);
+    m_artificial_area_grid = UpdateGridT::create(false);
   }
   virtual ~VDBMapping() = default;
 
@@ -644,7 +646,14 @@ public:
         }
       }
     }
+
+    // Set all artificial values to active
+    for (UpdateGridT::ValueOnCIter iter = m_artificial_area_grid->cbeginValueOn(); iter; ++iter)
+    {
+      acc.setActiveState(iter.getCoord(), true);
+    }
     map_lock.unlock();
+
     return change;
   }
 
@@ -892,6 +901,61 @@ public:
     map_lock.unlock();
   }
 
+
+  void restoreMapIntegrity()
+  {
+    // Set each voxel to its previous state
+    auto restoreState = [&](TData& voxel_value, bool& active) {
+      setNodeState(voxel_value, active);
+    };
+    typename GridT::Accessor acc = m_vdb_grid->getAccessor();
+    for (auto iter = m_artificial_area_grid->cbeginValueOn(); iter; ++iter)
+    {
+      acc.modifyValueAndActiveState(iter.getCoord(), restoreState);
+    }
+    // Clear artificial grid
+    m_artificial_area_grid->clear();
+    m_artificial_areas_present = false;
+  }
+
+  void
+  addArtificialAreas(const std::vector<std::vector<Eigen::Matrix<double, 3, 1> > > artificial_areas)
+  {
+    // Restore map integrity by removing all artificial walls
+    restoreMapIntegrity();
+    m_artificial_areas_present = true;
+
+    // Add all artificial areas
+    for (auto& artificial_area : artificial_areas)
+    {
+      addArtificialPolygon(artificial_area);
+    }
+  }
+
+  void addArtificialPolygon(const std::vector<Eigen::Matrix<double, 3, 1> > polygon)
+  {
+    for (size_t i = 0; i < polygon.size(); i++)
+    {
+      addArtificialWall(polygon[i], polygon[(i + 1) % polygon.size()]);
+    }
+  }
+
+  void addArtificialWall(const Eigen::Matrix<double, 3, 1> start,
+                         const Eigen::Matrix<double, 3, 1> end)
+  {
+    UpdateGridT::Accessor artificial_area_grid_acc = m_artificial_area_grid->getAccessor();
+    openvdb::Coord start_index =
+      this->worldToIndex(openvdb::Vec3d(start.x(), start.y(), start.z()));
+    openvdb::Coord end_index = this->worldToIndex(openvdb::Vec3d(end.x(), end.y(), end.z()));
+    for (int i = -5; i < 5; i++)
+    {
+      castRayIntoGrid(start_index + openvdb::Coord(0, 0, i),
+                      end_index + openvdb::Coord(0, 0, i),
+                      artificial_area_grid_acc);
+    }
+  }
+
+
   std::vector<uint8_t> compressString(const std::string& string) const
   {
     auto uncompressed = std::vector<uint8_t>(string.begin(), string.end());
@@ -990,6 +1054,7 @@ protected:
   virtual bool updateOccupiedNode(TData& voxel_value, bool& active) { return false; }
   virtual bool setNodeToFree(TData& voxel_value, bool& active) { return false; }
   virtual bool setNodeToOccupied(TData& voxel_value, bool& active) { return false; }
+  virtual bool setNodeState(TData& voxel_value, bool& active) { return false; }
 
   virtual void createMapFromPointCloud(const PointCloudT::Ptr& cloud,
                                        const bool set_background,
@@ -1002,6 +1067,8 @@ protected:
    * \brief VDB grid pointer
    */
   typename GridT::Ptr m_vdb_grid;
+
+  typename UpdateGridT::Ptr m_artificial_area_grid;
   /*!
    * \brief Maximum raycasting distance
    */
@@ -1022,6 +1089,7 @@ protected:
   UpdateGridT::Ptr m_update_grid;
 
   unsigned int m_compression_level = 1;
+  bool m_artificial_areas_present;
 
   UpdateGridT::Ptr m_consumable_update_grid;
 
