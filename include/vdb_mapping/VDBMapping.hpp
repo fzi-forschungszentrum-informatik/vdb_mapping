@@ -92,6 +92,9 @@ public:
     : m_resolution(resolution)
     , m_config_set(false)
   {
+    m_map_mutex                    = std::make_shared<std::shared_mutex>();
+    m_update_grid_mutex            = std::make_shared<std::shared_mutex>();
+    m_consumable_update_grid_mutex = std::make_shared<std::shared_mutex>();
     // Initialize Grid
     openvdb::initialize();
     if (!GridT::isRegistered())
@@ -102,8 +105,9 @@ public:
     {
       UpdateGridT::registerGrid();
     }
-    m_vdb_grid    = createVDBMap(m_resolution);
-    m_update_grid = UpdateGridT::create(false);
+    m_vdb_grid               = createVDBMap(m_resolution);
+    m_update_grid            = UpdateGridT::create(false);
+    m_consumable_update_grid = UpdateGridT::create(false);
   }
   virtual ~VDBMapping() = default;
 
@@ -127,9 +131,15 @@ public:
    */
   void resetMap()
   {
+    std::unique_lock map_lock(*m_map_mutex);
     m_vdb_grid->clear();
-    m_vdb_grid    = createVDBMap(m_resolution);
+    m_vdb_grid = createVDBMap(m_resolution);
+    map_lock.unlock();
+    std::unique_lock update_grid_lock(*m_update_grid_mutex);
     m_update_grid = UpdateGridT::create(false);
+    update_grid_lock.unlock();
+    std::unique_lock consumable_update_grid_lock(*m_consumable_update_grid_mutex);
+    m_consumable_update_grid = UpdateGridT::create(false);
   }
 
   /*!
@@ -147,9 +157,11 @@ public:
     std::cout << map_name << std::endl;
     openvdb::io::File file_handle(map_name);
     openvdb::GridPtrVec grids;
+    std::shared_lock map_lock(*m_map_mutex);
     grids.push_back(m_vdb_grid);
     file_handle.write(grids);
     file_handle.close();
+    map_lock.unlock();
     return true;
   }
 
@@ -169,6 +181,7 @@ public:
 
     PointCloudT::Ptr cloud(new PointCloudT);
 
+    std::shared_lock map_lock(*m_map_mutex);
     cloud->points.reserve(m_vdb_grid->activeVoxelCount());
 
     for (typename GridT::ValueOnCIter iter = m_vdb_grid->cbeginValueOn(); iter; ++iter)
@@ -182,6 +195,7 @@ public:
       point.z = static_cast<float>(world_coord.z());
       cloud->points.push_back(point);
     }
+    map_lock.unlock();
 
     cloud->points.shrink_to_fit();
     cloud->width  = cloud->points.size();
@@ -204,6 +218,8 @@ public:
     openvdb::io::File file_handle(file_path);
     file_handle.open();
     openvdb::GridBase::Ptr base_grid;
+
+    std::unique_lock map_lock(*m_map_mutex);
     for (openvdb::io::File::NameIterator name_iter = file_handle.beginName();
          name_iter != file_handle.endName();
          ++name_iter)
@@ -213,7 +229,7 @@ public:
       m_vdb_grid = openvdb::gridPtrCast<GridT>(base_grid);
     }
     file_handle.close();
-
+    map_lock.unlock();
 
     return true;
   }
@@ -235,7 +251,9 @@ public:
       PCL_ERROR("Could not open PCD file");
       return false;
     }
+    std::unique_lock map_lock(*m_map_mutex);
     createMapFromPointCloud(cloud, set_background, clear_map);
+    map_lock.unlock();
     return true;
   }
 
@@ -250,6 +268,7 @@ public:
                         const Eigen::Matrix<double, 3, 1>& origin,
                         const double& max_range)
   {
+    std::unique_lock update_grid_lock(*m_update_grid_mutex);
     UpdateGridT::Accessor update_grid_acc = m_update_grid->getAccessor();
     if (max_range > 0)
     {
@@ -259,6 +278,7 @@ public:
     {
       raycastPointCloud(cloud, origin, update_grid_acc);
     }
+    update_grid_lock.unlock();
   }
 
   /*!
@@ -269,14 +289,26 @@ public:
    */
   void integrateUpdate(UpdateGridT::Ptr& update_grid, UpdateGridT::Ptr& overwrite_grid)
   {
-    overwrite_grid = updateMap(m_update_grid);
-    update_grid    = m_update_grid;
+    std::shared_lock update_grid_lock(*m_update_grid_mutex);
+    std::unique_lock consumable_update_grid_lock(*m_consumable_update_grid_mutex);
+    m_consumable_update_grid = m_update_grid;
+    update_grid_lock.unlock();
+    resetUpdate();
+    overwrite_grid = updateMap(m_consumable_update_grid);
+    update_grid    = m_consumable_update_grid;
+    consumable_update_grid_lock.unlock();
   }
 
   /*!
    * \brief Resets the updates grid
    */
-  void resetUpdate() { m_update_grid = UpdateGridT::create(false); }
+  void resetUpdate()
+  {
+    std::unique_lock update_grid_lock(*m_update_grid_mutex);
+    m_update_grid = UpdateGridT::create(false);
+    // m_update_grid.reset(UpdateGridT::create(false));
+    update_grid_lock.unlock();
+  }
 
   /*!
    * \brief Handles the integration of new PointCloud data into the VDB data structure.
@@ -534,6 +566,7 @@ public:
    */
   void overwriteMap(const UpdateGridT::Ptr& update_grid)
   {
+    std::unique_lock map_lock(*m_map_mutex);
     typename GridT::Accessor acc = m_vdb_grid->getAccessor();
     for (UpdateGridT::ValueOnCIter iter = update_grid->cbeginValueOn(); iter; ++iter)
     {
@@ -546,6 +579,7 @@ public:
         acc.setActiveState(iter.getCoord(), false);
       }
     }
+    map_lock.unlock();
   }
 
   /*!
@@ -565,7 +599,8 @@ public:
       return change;
     }
 
-    bool state_changed           = false;
+    bool state_changed = false;
+    std::unique_lock map_lock(*m_map_mutex);
     typename GridT::Accessor acc = m_vdb_grid->getAccessor();
     // Probability update lambda for free space grid elements
     auto miss = [&](TData& voxel_value, bool& active) {
@@ -609,6 +644,7 @@ public:
         }
       }
     }
+    map_lock.unlock();
     return change;
   }
 
@@ -683,9 +719,10 @@ public:
     openvdb::BBoxd world_bb =
       createWorldBoundingBox(min_boundary, max_boundary, map_to_reference_tf);
 
-
+    std::shared_lock map_lock(*m_map_mutex);
     openvdb::Vec3d min_index = m_vdb_grid->worldToIndex(world_bb.min());
     openvdb::Vec3d max_index = m_vdb_grid->worldToIndex(world_bb.max());
+    map_lock.unlock();
 
     return {openvdb::Coord::floor(min_index), openvdb::Coord::floor(max_index)};
   }
@@ -752,6 +789,7 @@ public:
     openvdb::CoordBBox bounding_box(
       createIndexBoundingBox(min_boundary, max_boundary, map_to_reference_tf));
 
+    std::shared_lock map_lock(*m_map_mutex);
     for (auto leaf_iter = m_vdb_grid->tree().cbeginLeaf(); leaf_iter; ++leaf_iter)
     {
       openvdb::CoordBBox bbox;
@@ -788,6 +826,7 @@ public:
         }
       }
     }
+    map_lock.unlock();
 
     openvdb::Vec3d min(bounding_box.min().x(), bounding_box.min().y(), bounding_box.min().z());
     openvdb::Vec3d max(bounding_box.max().x(), bounding_box.max().y(), bounding_box.max().z());
@@ -806,8 +845,8 @@ public:
   void applyMapSectionGrid(const typename GridT::Ptr section)
   {
     typename GridT::Accessor section_acc = section->getAccessor();
-    typename GridT::Accessor acc         = m_vdb_grid->getAccessor();
-
+    std::unique_lock map_lock(*m_map_mutex);
+    typename GridT::Accessor acc = m_vdb_grid->getAccessor();
     for (auto iter = section->cbeginValueAll(); iter; ++iter)
     {
       openvdb::Coord coord = iter.getCoord();
@@ -820,6 +859,7 @@ public:
         acc.setValueOff(coord, section_acc.getValue(coord));
       }
     }
+    map_lock.unlock();
   }
 
   /*!
@@ -832,9 +872,10 @@ public:
   void applyMapSectionUpdateGrid(const typename UpdateGridT::Ptr section)
   {
     typename UpdateGridT::Accessor section_acc = section->getAccessor();
-    typename GridT::Accessor acc               = m_vdb_grid->getAccessor();
-    openvdb::Vec3d min = section->template metaValue<openvdb::Vec3d>("bb_min");
-    openvdb::Vec3d max = section->template metaValue<openvdb::Vec3d>("bb_max");
+    std::unique_lock map_lock(*m_map_mutex);
+    typename GridT::Accessor acc = m_vdb_grid->getAccessor();
+    openvdb::Vec3d min           = section->template metaValue<openvdb::Vec3d>("bb_min");
+    openvdb::Vec3d max           = section->template metaValue<openvdb::Vec3d>("bb_max");
     openvdb::CoordBBox bbox(openvdb::Coord::floor(min), openvdb::Coord::floor(max));
 
     for (auto iter = m_vdb_grid->cbeginValueOn(); iter; ++iter)
@@ -848,6 +889,7 @@ public:
     {
       acc.setActiveState(iter.getCoord(), true);
     }
+    map_lock.unlock();
   }
 
   std::vector<uint8_t> compressString(const std::string& string) const
@@ -921,6 +963,10 @@ public:
     return update_grid;
   }
 
+  std::shared_ptr<std::shared_mutex> getMapMutex() { return m_map_mutex; }
+  std::shared_ptr<std::shared_mutex> getUpdateGridMutex() { return m_map_mutex; }
+  std::shared_ptr<std::shared_mutex> getConsumableUpdateGridMutex() { return m_map_mutex; }
+
   /*!
    * \brief Handles changing the mapping config
    *
@@ -976,6 +1022,12 @@ protected:
   UpdateGridT::Ptr m_update_grid;
 
   unsigned int m_compression_level = 1;
+
+  UpdateGridT::Ptr m_consumable_update_grid;
+
+  mutable std::shared_ptr<std::shared_mutex> m_map_mutex;
+  mutable std::shared_ptr<std::shared_mutex> m_update_grid_mutex;
+  mutable std::shared_ptr<std::shared_mutex> m_consumable_update_grid_mutex;
 };
 
 #include "VDBMapping.hpp"
