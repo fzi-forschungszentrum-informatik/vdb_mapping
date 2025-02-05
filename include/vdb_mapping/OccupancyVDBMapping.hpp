@@ -133,8 +133,7 @@ protected:
     {
       active = true;
     }
-    if(voxel_value < m_logodds_thres_min)
-    {
+    else {
       active = false;
     }
     return true;
