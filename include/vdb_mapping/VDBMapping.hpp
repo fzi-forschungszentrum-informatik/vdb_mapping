@@ -109,7 +109,7 @@ public:
     m_vdb_grid               = createVDBMap(m_resolution);
     m_update_grid            = UpdateGridT::create(false);
     m_consumable_update_grid = UpdateGridT::create(false);
-    m_artificial_area_grid = UpdateGridT::create(false);
+    m_artificial_area_grid   = UpdateGridT::create(false);
   }
   virtual ~VDBMapping() = default;
 
@@ -919,7 +919,9 @@ public:
   }
 
   void
-  addArtificialAreas(const std::vector<std::vector<Eigen::Matrix<double, 3, 1> > > artificial_areas)
+  addArtificialAreas(const std::vector<std::vector<Eigen::Matrix<double, 4, 1> > > artificial_areas,
+                     const double negative_height,
+                     const double positive_height)
   {
     // Restore map integrity by removing all artificial walls
     restoreMapIntegrity();
@@ -928,26 +930,35 @@ public:
     // Add all artificial areas
     for (auto& artificial_area : artificial_areas)
     {
-      addArtificialPolygon(artificial_area);
+      addArtificialPolygon(artificial_area, negative_height, positive_height);
     }
   }
 
-  void addArtificialPolygon(const std::vector<Eigen::Matrix<double, 3, 1> > polygon)
+  void addArtificialPolygon(const std::vector<Eigen::Matrix<double, 4, 1> > polygon,
+                            const double negative_height,
+                            const double positive_height)
   {
     for (size_t i = 0; i < polygon.size(); i++)
     {
-      addArtificialWall(polygon[i], polygon[(i + 1) % polygon.size()]);
+      addArtificialWall(
+        polygon[i], polygon[(i + 1) % polygon.size()], negative_height, positive_height);
     }
   }
 
-  void addArtificialWall(const Eigen::Matrix<double, 3, 1> start,
-                         const Eigen::Matrix<double, 3, 1> end)
+  void addArtificialWall(const Eigen::Matrix<double, 4, 1> start,
+                         const Eigen::Matrix<double, 4, 1> end,
+                         const double negative_height,
+                         const double positive_height)
   {
     UpdateGridT::Accessor artificial_area_grid_acc = m_artificial_area_grid->getAccessor();
     openvdb::Coord start_index =
       this->worldToIndex(openvdb::Vec3d(start.x(), start.y(), start.z()));
     openvdb::Coord end_index = this->worldToIndex(openvdb::Vec3d(end.x(), end.y(), end.z()));
-    for (int i = -5; i < 5; i++)
+
+    int negative_index = (int)(negative_height / m_resolution);
+    int positive_index = (int)(positive_height / m_resolution);
+
+    for (int i = negative_index; i < positive_index; i++)
     {
       castRayIntoGrid(start_index + openvdb::Coord(0, 0, i),
                       end_index + openvdb::Coord(0, 0, i),
