@@ -38,6 +38,7 @@
 #include <chrono>
 #include <eigen3/Eigen/Geometry>
 #include <iostream>
+#include <shared_mutex>
 
 #include <openvdb/Types.h>
 #include <openvdb/io/Stream.h>
