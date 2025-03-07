@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.16.3)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules" ${CMAKE_MODULE_PATH})
 
 option(BUILDING_TESTS "Build unit tests." ON)
@@ -43,6 +43,8 @@ target_link_libraries(${PROJECT_NAME}
     ${ZSTD_LIBRARIES}
     -lImath
     )
+
+target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_17)
 
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
