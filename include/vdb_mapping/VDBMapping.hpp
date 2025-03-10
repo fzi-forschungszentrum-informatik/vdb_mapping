@@ -852,8 +852,15 @@ public:
    * of the section is encoded in the grids meta information
    *
    */
-  void applyMapSectionGrid(const typename GridT::Ptr section)
+  void applyMapSectionGrid(const typename GridT::Ptr section,
+                           bool smooth_map          = false,
+                           int smoothing_iterations = 2)
   {
+    if (smooth_map)
+    {
+      morphologicalCloseMap<GridT>(section, smoothing_iterations);
+    }
+
     typename GridT::Accessor section_acc = section->getAccessor();
     std::unique_lock map_lock(*m_map_mutex);
     typename GridT::Accessor acc = m_vdb_grid->getAccessor();
@@ -879,8 +886,14 @@ public:
    * of the section is encoded in the grids meta information
    *
    */
-  void applyMapSectionUpdateGrid(const typename UpdateGridT::Ptr section)
+  void applyMapSectionUpdateGrid(const typename UpdateGridT::Ptr section,
+                                 bool smooth_map          = false,
+                                 int smoothing_iterations = 2)
   {
+    if (smooth_map)
+    {
+      morphologicalCloseMap<UpdateGridT>(section, smoothing_iterations);
+    }
     typename UpdateGridT::Accessor section_acc = section->getAccessor();
     std::unique_lock map_lock(*m_map_mutex);
     typename GridT::Accessor acc = m_vdb_grid->getAccessor();
@@ -902,6 +915,36 @@ public:
     map_lock.unlock();
   }
 
+  template <typename TGrid>
+  void morphologicalCloseMap(typename TGrid::Ptr grid, int iterations)
+  {
+    morphologicalDilateMap<TGrid>(grid, iterations);
+    morphologicalErodeMap<TGrid>(grid, iterations);
+  }
+  template <typename TGrid>
+  void morphologicalOpenMap(typename TGrid::Ptr grid, int iterations)
+  {
+    morphologicalErodeMap<TGrid>(grid, iterations);
+    morphologicalDilateMap<TGrid>(grid, iterations);
+  }
+  template <typename TGrid>
+  void morphologicalDilateMap(typename TGrid::Ptr grid, int iterations)
+  {
+    openvdb::tools::dilateActiveValues(grid->tree(),
+                                       iterations,
+                                       openvdb::tools::NN_FACE_EDGE_VERTEX,
+                                       openvdb::tools::EXPAND_TILES,
+                                       true);
+  }
+  template <typename TGrid>
+  void morphologicalErodeMap(typename TGrid::Ptr grid, int iterations)
+  {
+    openvdb::tools::erodeActiveValues(grid->tree(),
+                                      iterations,
+                                      openvdb::tools::NN_FACE_EDGE_VERTEX,
+                                      openvdb::tools::EXPAND_TILES,
+                                      true);
+  }
 
   void restoreMapIntegrity()
   {
