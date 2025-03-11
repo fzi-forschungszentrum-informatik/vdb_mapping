@@ -47,6 +47,7 @@
 #include <openvdb/openvdb.h>
 #include <openvdb/tools/Clip.h>
 #include <openvdb/tools/Morphology.h>
+#include <openvdb/tools/RayIntersector.h>
 
 #include <zstd.h>
 
@@ -89,8 +90,9 @@ public:
    *
    * \param resolution Resolution of the VDB Grid
    */
-  VDBMapping(const double resolution)
+  VDBMapping(const double resolution, bool fast_mode)
     : m_resolution(resolution)
+    , m_fast_mode(fast_mode)
     , m_config_set(false)
     , m_artificial_areas_present(false)
   {
@@ -448,6 +450,19 @@ public:
     // Ray end point in world coordinates
     openvdb::Vec3d ray_end_world;
 
+    auto t0 = std::chrono::high_resolution_clock::now();
+
+    bool grid_empty = m_vdb_grid->empty();
+    if (m_fast_mode)
+    {
+      if (!grid_empty)
+      {
+        m_inter =
+          std::make_shared<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> >(*m_vdb_grid);
+      }
+    }
+    typename GridT::Accessor acc = m_vdb_grid->getAccessor();
+
     // Raycasting of every point in the input cloud
     for (const PointT& pt : *cloud)
     {
@@ -470,13 +485,28 @@ public:
       }
 
       openvdb::Coord ray_end_index = this->worldToIndex(ray_end_world);
-      castRayIntoGrid(ray_origin_index, ray_end_index, update_grid_acc);
+      if (m_fast_mode)
+      {
+        if (!grid_empty)
+        {
+          castRayIntoGridFast(ray_origin_index, ray_end_index, acc, update_grid_acc);
+        }
+      }
+      else
+      {
+        castRayIntoGrid(ray_origin_index, ray_end_index, update_grid_acc);
+      }
 
       if (!max_range_ray)
       {
         update_grid_acc.setValueOn(ray_end_index, true);
       }
     }
+    auto t1                                      = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> ms = t1 - t0;
+    std::cout << "Old: " << ms.count() << std::endl;
+    std::cout << "active: " << update_grid_acc.tree().activeVoxelCount() << std::endl;
+
     return true;
   }
 
@@ -506,6 +536,30 @@ public:
       do
       {
         update_grid_acc.setActiveState(dda.voxel(), true);
+      } while (dda.step());
+    }
+  }
+
+  void castRayIntoGridFast(const openvdb::Coord& ray_origin_index,
+                           const openvdb::Coord& ray_end_index,
+                           typename GridT::Accessor& grid_acc,
+                           UpdateGridT::Accessor& update_grid_acc) const
+  {
+    openvdb::Vec3d ray_direction = (ray_end_index.asVec3d() - ray_origin_index);
+    RayT ray(ray_origin_index.asVec3d() + 0.5, ray_direction, 0, 1);
+    m_inter->setIndexRay(ray);
+    std::vector<RayT::TimeSpan> hits;
+    m_inter->hits(hits);
+    for (auto& hit : hits)
+    {
+      RayT fine_ray(ray_origin_index.asVec3d() + 0.5, ray_direction, hit.t0, hit.t1);
+      DDAT dda(fine_ray);
+      do
+      {
+        if (grid_acc.isValueOn(dda.voxel()))
+        {
+          update_grid_acc.setActiveState(dda.voxel(), true);
+        }
       } while (dda.step());
     }
   }
@@ -1122,7 +1176,8 @@ protected:
    * \brief VDB grid pointer
    */
   typename GridT::Ptr m_vdb_grid;
-
+  typename UpdateGridT::Ptr m_update_grid;
+  typename UpdateGridT::Ptr m_consumable_update_grid;
   typename UpdateGridT::Ptr m_artificial_area_grid;
   /*!
    * \brief Maximum raycasting distance
@@ -1132,6 +1187,11 @@ protected:
    * \brief Grid resolution of the map
    */
   double m_resolution;
+
+  /*!
+   * \brief Should vdb_mapping operate in the fast raycasting method
+   */
+  bool m_fast_mode;
   /*!
    * \brief path where the maps will be stored
    */
@@ -1141,16 +1201,17 @@ protected:
    */
   bool m_config_set;
 
-  UpdateGridT::Ptr m_update_grid;
 
   unsigned int m_compression_level = 1;
   bool m_artificial_areas_present;
 
-  UpdateGridT::Ptr m_consumable_update_grid;
 
   mutable std::shared_ptr<std::shared_mutex> m_map_mutex;
   mutable std::shared_ptr<std::shared_mutex> m_update_grid_mutex;
   mutable std::shared_ptr<std::shared_mutex> m_consumable_update_grid_mutex;
+
+
+  std::shared_ptr<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> > m_inter;
 };
 
 #include "VDBMapping.hpp"
