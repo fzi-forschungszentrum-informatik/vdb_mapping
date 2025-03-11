@@ -46,8 +46,8 @@ struct Config : BaseConfig
 class OccupancyVDBMapping : public VDBMapping<float, Config>
 {
 public:
-  OccupancyVDBMapping(const double resolution)
-    : VDBMapping<float, Config>(resolution)
+  OccupancyVDBMapping(const double resolution, bool fast_mode)
+    : VDBMapping<float, Config>(resolution, fast_mode)
   {
   }
 

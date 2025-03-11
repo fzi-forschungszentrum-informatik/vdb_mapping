@@ -5,7 +5,7 @@ namespace vdb_mapping {
 
 TEST(Mapping, SetConfig)
 {
-  OccupancyVDBMapping map(1);
+  OccupancyVDBMapping map(1, false);
   OccupancyVDBMapping::PointCloudT::Ptr cloud(new OccupancyVDBMapping::PointCloudT);
   cloud->points.emplace_back(0, 0, 1);
   Eigen::Matrix<double, 3, 1> origin(0, 0, 0);
@@ -30,7 +30,7 @@ TEST(Mapping, SetConfig)
 TEST(Mapping, InsertPositivePoint)
 {
   double resolution = 0.1;
-  OccupancyVDBMapping map(resolution);
+  OccupancyVDBMapping map(resolution, false);
   Config conf;
   conf.max_range      = 10;
   conf.prob_hit       = 0.9;
@@ -61,7 +61,7 @@ TEST(Mapping, InsertPositivePoint)
 TEST(Mapping, InsertNegativePoint)
 {
   double resolution = 0.1;
-  OccupancyVDBMapping map(resolution);
+  OccupancyVDBMapping map(resolution, false);
   Config conf;
   conf.max_range      = 10;
   conf.prob_hit       = 0.9;
@@ -92,7 +92,7 @@ TEST(Mapping, InsertNegativePoint)
 TEST(Mapping, InsertMaxRangePoint)
 {
   double resolution = 0.1;
-  OccupancyVDBMapping map(resolution);
+  OccupancyVDBMapping map(resolution, false);
   Config conf;
   conf.max_range      = 0.5;
   conf.prob_hit       = 0.9;
@@ -121,7 +121,7 @@ TEST(Mapping, InsertMaxRangePoint)
 
 TEST(Mapping, ResetMap)
 {
-  OccupancyVDBMapping map(1);
+  OccupancyVDBMapping map(1, false);
   Config conf;
   conf.max_range      = 10;
   conf.prob_hit       = 0.9;
