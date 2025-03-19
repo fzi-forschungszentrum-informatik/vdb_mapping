@@ -38,6 +38,7 @@
 #include <chrono>
 #include <eigen3/Eigen/Geometry>
 #include <iostream>
+#include <queue>
 #include <shared_mutex>
 
 #include <openvdb/Types.h>
@@ -51,6 +52,7 @@
 
 #include <zstd.h>
 
+
 namespace vdb_mapping {
 
 
@@ -62,6 +64,8 @@ struct BaseConfig
   double max_range;
   std::string map_directory_path;
 };
+
+
 /*!
  * \brief Main Mapping class which handles all data integration
  */
@@ -79,6 +83,16 @@ public:
   using GridT       = openvdb::Grid<typename openvdb::tree::Tree4<TData, 5, 4, 3>::Type>;
   using UpdateGridT = openvdb::Grid<openvdb::tree::Tree4<bool, 1, 4, 3>::Type>;
 
+  struct InputSource
+  {
+    std::string source_id;
+    double max_range;
+    UpdateGridT::Ptr update_grid;
+    std::mutex update_grid_mutex;
+    std::thread accumulation_thread;
+    std::mutex input_queue_mutex;
+    std::queue<std::pair<PointCloudT::ConstPtr, Eigen::Matrix<double, 3, 1> > > input_queue;
+  };
 
   VDBMapping()                  = delete;
   VDBMapping(const VDBMapping&) = delete;
@@ -96,10 +110,8 @@ public:
     , m_config_set(false)
     , m_artificial_areas_present(false)
   {
-    m_map_mutex                    = std::make_shared<std::shared_mutex>();
-    m_update_grid_mutex            = std::make_shared<std::shared_mutex>();
-    m_consumable_update_grid_mutex = std::make_shared<std::shared_mutex>();
-    // Initialize Grid
+    m_map_mutex = std::make_shared<std::shared_mutex>();
+    //  Initialize Grid
     openvdb::initialize();
     if (!GridT::isRegistered())
     {
@@ -109,12 +121,20 @@ public:
     {
       UpdateGridT::registerGrid();
     }
-    m_vdb_grid               = createVDBMap(m_resolution);
-    m_update_grid            = UpdateGridT::create(false);
-    m_consumable_update_grid = UpdateGridT::create(false);
-    m_artificial_area_grid   = UpdateGridT::create(false);
+    m_vdb_grid             = createVDBMap(m_resolution);
+    m_artificial_area_grid = UpdateGridT::create(false);
   }
-  virtual ~VDBMapping() = default;
+  virtual ~VDBMapping()
+  {
+    m_thread_stop_signal = true;
+    for (auto& [key, value] : m_input_sources)
+    {
+      if (value->accumulation_thread.joinable())
+      {
+        value->accumulation_thread.join();
+      }
+    }
+  }
 
   /*!
    * \brief Creates a new VDB Grid
@@ -140,11 +160,12 @@ public:
     m_vdb_grid->clear();
     m_vdb_grid = createVDBMap(m_resolution);
     map_lock.unlock();
-    std::unique_lock update_grid_lock(*m_update_grid_mutex);
-    m_update_grid = UpdateGridT::create(false);
-    update_grid_lock.unlock();
-    std::unique_lock consumable_update_grid_lock(*m_consumable_update_grid_mutex);
-    m_consumable_update_grid = UpdateGridT::create(false);
+
+    for (auto& [key, value] : m_input_sources)
+    {
+      std::unique_lock update_grid_lock(value->update_grid_mutex);
+      value->update_grid = UpdateGridT::create(false);
+    }
   }
 
   /*!
@@ -267,23 +288,17 @@ public:
    *
    * \param cloud Input cloud in map coordinates
    * \param origin Sensor position in map coordinates
-   * \param max_range Maximum raycasting range of this measurement
+   * \param source Specifies the input source
    */
   void accumulateUpdate(const PointCloudT::ConstPtr& cloud,
                         const Eigen::Matrix<double, 3, 1>& origin,
-                        const double& max_range)
+                        const std::string source)
   {
-    std::unique_lock update_grid_lock(*m_update_grid_mutex);
-    UpdateGridT::Accessor update_grid_acc = m_update_grid->getAccessor();
-    if (max_range > 0)
-    {
-      raycastPointCloud(cloud, origin, max_range, update_grid_acc);
-    }
-    else
-    {
-      raycastPointCloud(cloud, origin, update_grid_acc);
-    }
-    update_grid_lock.unlock();
+    std::unique_lock lock(m_input_sources[source]->input_queue_mutex);
+    std::pair<PointCloudT::ConstPtr, Eigen::Matrix<double, 3, 1> > measurement;
+    measurement.first  = cloud;
+    measurement.second = origin;
+    m_input_sources[source]->input_queue.push(measurement);
   }
 
   /*!
@@ -294,25 +309,29 @@ public:
    */
   void integrateUpdate(UpdateGridT::Ptr& update_grid, UpdateGridT::Ptr& overwrite_grid)
   {
-    std::shared_lock update_grid_lock(*m_update_grid_mutex);
-    std::unique_lock consumable_update_grid_lock(*m_consumable_update_grid_mutex);
-    m_consumable_update_grid = m_update_grid;
-    update_grid_lock.unlock();
-    resetUpdate();
-    overwrite_grid = updateMap(m_consumable_update_grid);
-    update_grid    = m_consumable_update_grid;
-    consumable_update_grid_lock.unlock();
-  }
+    m_map_mutex_requested = true;
+    std::unique_lock map_lock(*m_map_mutex);
+    m_map_mutex_requested = false;
+    for (auto& [key, value] : m_input_sources)
+    {
+      // TODO this will break the overwrite functionality... Fix in future release
+      // There will be only the last part in the overwrite grid
+      overwrite_grid = updateMap(value->update_grid);
 
-  /*!
-   * \brief Resets the updates grid
-   */
-  void resetUpdate()
-  {
-    std::unique_lock update_grid_lock(*m_update_grid_mutex);
-    m_update_grid = UpdateGridT::create(false);
-    // m_update_grid.reset(UpdateGridT::create(false));
-    update_grid_lock.unlock();
+      value->update_grid = UpdateGridT::create(false);
+    }
+    // if (m_fast_mode)
+    //{
+    // auto t0 = std::chrono::high_resolution_clock::now();
+    // if (!m_vdb_grid->empty())
+    //{
+    // m_inter =
+    // std::make_shared<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> >(*m_vdb_grid);
+    //}
+    // auto t1                                      = std::chrono::high_resolution_clock::now();
+    // std::chrono::duration<double, std::milli> ms = t1 - t0;
+    // std::cout << "Creating inter: " << ms.count() << std::endl;
+    //}
   }
 
   /*!
@@ -325,12 +344,13 @@ public:
    * \returns Was the insertion of the new pointcloud successful
    */
   bool insertPointCloud(const PointCloudT::ConstPtr& cloud,
-                        const Eigen::Matrix<double, 3, 1>& origin)
+                        const Eigen::Matrix<double, 3, 1>& origin,
+                        const std::string source)
   {
     UpdateGridT::Ptr update_grid;
     UpdateGridT::Ptr overwrite_grid;
 
-    return insertPointCloud(cloud, origin, update_grid, overwrite_grid);
+    return insertPointCloud(cloud, origin, source, update_grid, overwrite_grid);
   }
 
   /*!
@@ -346,12 +366,12 @@ public:
    */
   bool insertPointCloud(const PointCloudT::ConstPtr& cloud,
                         const Eigen::Matrix<double, 3, 1>& origin,
+                        const std::string source,
                         UpdateGridT::Ptr& update_grid,
                         UpdateGridT::Ptr& overwrite_grid)
   {
-    accumulateUpdate(cloud, origin, m_max_range);
+    accumulateUpdate(cloud, origin, source);
     integrateUpdate(update_grid, overwrite_grid);
-    resetUpdate();
     return true;
   }
 
@@ -452,18 +472,28 @@ public:
 
     auto t0 = std::chrono::high_resolution_clock::now();
 
+    // std::shared_ptr<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> > m_inter;
     bool grid_empty = m_vdb_grid->empty();
-    if (m_fast_mode)
-    {
-      if (!grid_empty)
-      {
-        m_inter =
-          std::make_shared<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> >(*m_vdb_grid);
-      }
-    }
+    // if (m_fast_mode)
+    //{
+    // if (!grid_empty)
+    //{
+    // m_inter =
+    // std::make_shared<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> >(*m_vdb_grid);
+    //}
+    //}
     typename GridT::Accessor acc = m_vdb_grid->getAccessor();
 
     // Raycasting of every point in the input cloud
+    std::shared_ptr<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> > inter;
+    if (m_fast_mode)
+    {
+      if (!m_vdb_grid->empty())
+      {
+        inter =
+          std::make_shared<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> >(*m_vdb_grid);
+      }
+    }
     for (const PointT& pt : *cloud)
     {
       ray_end_world      = openvdb::Vec3d(pt.x, pt.y, pt.z);
@@ -489,7 +519,7 @@ public:
       {
         if (!grid_empty)
         {
-          castRayIntoGridFast(ray_origin_index, ray_end_index, acc, update_grid_acc);
+          castRayIntoGridFast(ray_origin_index, ray_end_index, acc, update_grid_acc, inter);
         }
       }
       else
@@ -540,10 +570,12 @@ public:
     }
   }
 
-  void castRayIntoGridFast(const openvdb::Coord& ray_origin_index,
-                           const openvdb::Coord& ray_end_index,
-                           typename GridT::Accessor& grid_acc,
-                           UpdateGridT::Accessor& update_grid_acc) const
+  void castRayIntoGridFast(
+    const openvdb::Coord& ray_origin_index,
+    const openvdb::Coord& ray_end_index,
+    typename GridT::Accessor& grid_acc,
+    UpdateGridT::Accessor& update_grid_acc,
+    std::shared_ptr<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> > m_inter) const
   {
     openvdb::Vec3d ray_direction = (ray_end_index.asVec3d() - ray_origin_index);
     RayT ray(ray_origin_index.asVec3d() + 0.5, ray_direction, 0, 1);
@@ -623,6 +655,10 @@ public:
    */
   void overwriteMap(const UpdateGridT::Ptr& update_grid)
   {
+    std::cout << "This function is no longer working correctly as it wasn't used a lot. If you "
+                 "direly need it contact the maintainer. Maybe you get lucky..."
+              << std::endl;
+    return;
     std::unique_lock map_lock(*m_map_mutex);
     typename GridT::Accessor acc = m_vdb_grid->getAccessor();
     for (UpdateGridT::ValueOnCIter iter = update_grid->cbeginValueOn(); iter; ++iter)
@@ -657,7 +693,7 @@ public:
     }
 
     bool state_changed = false;
-    std::unique_lock map_lock(*m_map_mutex);
+    // std::unique_lock map_lock(*m_map_mutex);
     typename GridT::Accessor acc = m_vdb_grid->getAccessor();
     // Probability update lambda for free space grid elements
     auto miss = [&](TData& voxel_value, bool& active) {
@@ -707,7 +743,7 @@ public:
     {
       acc.setActiveState(iter.getCoord(), true);
     }
-    map_lock.unlock();
+    // map_lock.unlock();
 
     return change;
   }
@@ -1140,6 +1176,85 @@ public:
   std::shared_ptr<std::shared_mutex> getUpdateGridMutex() { return m_map_mutex; }
   std::shared_ptr<std::shared_mutex> getConsumableUpdateGridMutex() { return m_map_mutex; }
 
+  void addInputSource(std::string source_id, double max_range)
+  {
+    auto s                        = std::make_shared<InputSource>();
+    s->source_id                  = source_id;
+    s->max_range                  = max_range;
+    s->update_grid                = UpdateGridT::create(false);
+    s->accumulation_thread        = std::thread(&VDBMapping::run, this, s->source_id);
+    m_input_sources[s->source_id] = s;
+  }
+
+  void run(std::string source_id)
+  {
+    while (!m_thread_stop_signal)
+    {
+      if (!m_map_mutex_requested)
+      {
+        size_t queue_size = m_input_sources[source_id]->input_queue.size();
+        if (queue_size > 1)
+        {
+          std::cout << "There are currently " << queue_size
+                    << " elements in the queue. The worker thread seems to fall behind"
+                    << std::endl;
+        }
+        if (queue_size != 0)
+        {
+          std::shared_lock map_lock(*m_map_mutex);
+          std::cout << "Raycasting: " << m_input_sources[source_id]->source_id << std::endl;
+          std::pair<PointCloudT::ConstPtr, Eigen::Matrix<double, 3, 1> > measurement;
+          measurement = m_input_sources[source_id]->input_queue.front();
+          m_input_sources[source_id]->input_queue.pop();
+          std::unique_lock update_grid_lock(m_input_sources[source_id]->update_grid_mutex);
+          UpdateGridT::Accessor update_grid_acc =
+            m_input_sources[source_id]->update_grid->getAccessor();
+
+          if (m_input_sources[source_id]->max_range > 0)
+          {
+            raycastPointCloud(measurement.first,
+                              measurement.second,
+                              m_input_sources[source_id]->max_range,
+                              update_grid_acc);
+          }
+          else
+          {
+            raycastPointCloud(measurement.first, measurement.second, update_grid_acc);
+          }
+        }
+      }
+    }
+    std::cout << "Thread for source " << source_id << " received stop signal." << std::endl;
+  }
+
+  void integrate()
+  {
+    std::cout << "INTEGRATE" << std::endl;
+    auto t0               = std::chrono::high_resolution_clock::now();
+    m_map_mutex_requested = true;
+    std::unique_lock map_lock(*m_map_mutex);
+    m_map_mutex_requested                        = false;
+    auto t1                                      = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> ms = t1 - t0;
+    std::cout << "Getting lock took " << ms.count() << std::endl;
+    for (auto& [key, value] : m_input_sources)
+    {
+      std::cout << "Processing grid of " << key << std::endl;
+      std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+  }
+
+  void timer()
+  {
+    while (!m_thread_stop_signal)
+    {
+      integrate();
+      std::this_thread::sleep_for(std::chrono::milliseconds(190));
+    }
+    std::cout << "Timer thread received stop signal" << std::endl;
+  }
+
+
   /*!
    * \brief Handles changing the mapping config
    *
@@ -1176,8 +1291,6 @@ protected:
    * \brief VDB grid pointer
    */
   typename GridT::Ptr m_vdb_grid;
-  typename UpdateGridT::Ptr m_update_grid;
-  typename UpdateGridT::Ptr m_consumable_update_grid;
   typename UpdateGridT::Ptr m_artificial_area_grid;
   /*!
    * \brief Maximum raycasting distance
@@ -1207,11 +1320,13 @@ protected:
 
 
   mutable std::shared_ptr<std::shared_mutex> m_map_mutex;
-  mutable std::shared_ptr<std::shared_mutex> m_update_grid_mutex;
-  mutable std::shared_ptr<std::shared_mutex> m_consumable_update_grid_mutex;
 
+  mutable std::atomic<bool> m_map_mutex_requested{false};
 
-  std::shared_ptr<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> > m_inter;
+  // std::shared_ptr<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> > m_inter;
+
+  std::map<std::string, std::shared_ptr<InputSource> > m_input_sources;
+  std::atomic<bool> m_thread_stop_signal{false};
 };
 
 #include "VDBMapping.hpp"
