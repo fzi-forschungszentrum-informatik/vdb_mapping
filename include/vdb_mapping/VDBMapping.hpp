@@ -89,7 +89,6 @@ public:
     double max_range;
     UpdateGridT::Ptr update_grid;
     std::mutex update_grid_mutex;
-    std::thread accumulation_thread;
     std::mutex input_queue_mutex;
     std::queue<std::pair<PointCloudT::ConstPtr, Eigen::Matrix<double, 3, 1> > > input_queue;
   };
@@ -127,11 +126,11 @@ public:
   virtual ~VDBMapping()
   {
     m_thread_stop_signal = true;
-    for (auto& [key, value] : m_input_sources)
+    for (auto& [key, value] : m_worker_threads)
     {
-      if (value->accumulation_thread.joinable())
+      if (value.joinable())
       {
-        value->accumulation_thread.join();
+        value.join();
       }
     }
   }
@@ -1182,7 +1181,7 @@ public:
     s->source_id                  = source_id;
     s->max_range                  = max_range;
     s->update_grid                = UpdateGridT::create(false);
-    s->accumulation_thread        = std::thread(&VDBMapping::run, this, s->source_id);
+    m_worker_threads[source_id]   = std::thread(&VDBMapping::run, this, source_id);
     m_input_sources[s->source_id] = s;
   }
 
@@ -1327,6 +1326,7 @@ protected:
 
   std::map<std::string, std::shared_ptr<InputSource> > m_input_sources;
   std::atomic<bool> m_thread_stop_signal{false};
+  std::map<std::string, std::thread> m_worker_threads;
 };
 
 #include "VDBMapping.hpp"
