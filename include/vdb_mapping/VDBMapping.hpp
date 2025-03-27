@@ -525,7 +525,6 @@ public:
     auto t1                                      = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> ms = t1 - t0;
     std::cout << "Old: " << ms.count() << std::endl;
-    std::cout << "active: " << update_grid_acc.tree().activeVoxelCount() << std::endl;
 
     return true;
   }
@@ -682,8 +681,7 @@ public:
       return change;
     }
 
-    bool state_changed = false;
-    // std::unique_lock map_lock(*m_map_mutex);
+    bool state_changed           = false;
     typename GridT::Accessor acc = m_vdb_grid->getAccessor();
     // Probability update lambda for free space grid elements
     auto miss = [&](TData& voxel_value, bool& active) {
@@ -733,7 +731,6 @@ public:
     {
       acc.setActiveState(iter.getCoord(), true);
     }
-    // map_lock.unlock();
 
     return change;
   }
@@ -1279,7 +1276,6 @@ public:
       }
     }
   }
-
 
   /*!
    * \brief Handles changing the mapping config
