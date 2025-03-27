@@ -1294,9 +1294,11 @@ public:
                 << std::endl;
       return;
     }
-    m_max_range          = config.max_range;
-    m_map_directory_path = config.map_directory_path;
-    m_config_set         = true;
+    m_max_range           = config.max_range;
+    m_map_directory_path  = config.map_directory_path;
+    m_fast_mode           = config.fast_mode;
+    m_accumulation_period = (int)(config.accumulation_period * 1000);
+    m_config_set          = true;
   }
 
 protected:
