@@ -1168,10 +1168,16 @@ public:
 
   void addInputSource(std::string source_id, double max_range, double max_rate)
   {
-    auto s                        = std::make_shared<InputSource>();
-    s->source_id                  = source_id;
-    s->max_range                  = max_range;
-    s->update_grid                = UpdateGridT::create(false);
+    auto s       = std::make_shared<InputSource>();
+    s->source_id = source_id;
+    if (max_range == 0)
+    {
+      s->max_range = m_max_range;
+    }
+    else
+    {
+      s->max_range = max_range;
+    }
     if (max_rate < 0)
     {
       s->max_input_period = std::chrono::milliseconds(0);
