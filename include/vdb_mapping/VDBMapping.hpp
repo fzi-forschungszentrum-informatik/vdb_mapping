@@ -89,6 +89,8 @@ public:
   {
     std::string source_id;
     double max_range;
+    std::shared_ptr<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> >
+      volume_ray_intersector;
     UpdateGridT::Ptr update_grid;
     std::mutex update_grid_mutex;
     std::mutex input_data_mutex;
@@ -332,18 +334,6 @@ public:
 
       value->update_grid = UpdateGridT::create(false);
     }
-    // if (m_fast_mode)
-    //{
-    // auto t0 = std::chrono::high_resolution_clock::now();
-    // if (!m_vdb_grid->empty())
-    //{
-    // m_inter =
-    // std::make_shared<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> >(*m_vdb_grid);
-    //}
-    // auto t1                                      = std::chrono::high_resolution_clock::now();
-    // std::chrono::duration<double, std::milli> ms = t1 - t0;
-    // std::cout << "Creating inter: " << ms.count() << std::endl;
-    //}
   }
 
   /*!
@@ -434,6 +424,7 @@ public:
    *
    * \returns Raycasted update grid
    */
+  [[deprecated]]
   bool raycastPointCloud(const PointCloudT::ConstPtr& cloud,
                          const Eigen::Matrix<double, 3, 1>& origin,
                          UpdateGridT::Accessor& update_grid_acc)
@@ -457,10 +448,13 @@ public:
    *
    * \returns Raycasted update grid
    */
-  bool raycastPointCloud(const PointCloudT::ConstPtr& cloud,
-                         const Eigen::Matrix<double, 3, 1>& origin,
-                         const double raycast_range,
-                         UpdateGridT::Accessor& update_grid_acc)
+  bool raycastPointCloud(
+    const PointCloudT::ConstPtr& cloud,
+    const Eigen::Matrix<double, 3, 1>& origin,
+    const double raycast_range,
+    UpdateGridT::Accessor& update_grid_acc,
+    std::optional<std::shared_ptr<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> > >
+      intersector = std::nullopt)
   {
     // Creating a temporary grid in which the new data is casted. This way we prevent the
     // computation of redundant probability updates in the actual map
@@ -475,6 +469,7 @@ public:
     RayT ray;
     DDAT dda;
 
+
     // Ray origin in world coordinates
     openvdb::Vec3d ray_origin_world(origin.x(), origin.y(), origin.z());
     // Ray origin in index coordinates
@@ -484,28 +479,10 @@ public:
 
     auto t0 = std::chrono::high_resolution_clock::now();
 
-    // std::shared_ptr<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> > m_inter;
-    bool grid_empty = m_vdb_grid->empty();
-    // if (m_fast_mode)
-    //{
-    // if (!grid_empty)
-    //{
-    // m_inter =
-    // std::make_shared<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> >(*m_vdb_grid);
-    //}
-    //}
+    bool grid_empty              = m_vdb_grid->empty();
     typename GridT::Accessor acc = m_vdb_grid->getAccessor();
 
     // Raycasting of every point in the input cloud
-    std::shared_ptr<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> > inter;
-    if (m_fast_mode)
-    {
-      if (!m_vdb_grid->empty())
-      {
-        inter =
-          std::make_shared<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> >(*m_vdb_grid);
-      }
-    }
     for (const PointT& pt : *cloud)
     {
       ray_end_world      = openvdb::Vec3d(pt.x, pt.y, pt.z);
@@ -531,7 +508,8 @@ public:
       {
         if (!grid_empty)
         {
-          castRayIntoGridFast(ray_origin_index, ray_end_index, acc, update_grid_acc, inter);
+          castRayIntoGridFast(
+            ray_origin_index, ray_end_index, acc, update_grid_acc, intersector.value());
         }
       }
       else
@@ -1231,14 +1209,21 @@ public:
 
           if (m_input_sources[source_id]->max_range > 0)
           {
-            raycastPointCloud(measurement.first,
-                              measurement.second,
-                              m_input_sources[source_id]->max_range,
-                              update_grid_acc);
-          }
-          else
-          {
-            raycastPointCloud(measurement.first, measurement.second, update_grid_acc);
+            if (m_fast_mode)
+            {
+              raycastPointCloud(measurement.first,
+                                measurement.second,
+                                m_input_sources[source_id]->max_range,
+                                update_grid_acc,
+                                m_input_sources[source_id]->volume_ray_intersector);
+            }
+            else
+            {
+              raycastPointCloud(measurement.first,
+                                measurement.second,
+                                m_input_sources[source_id]->max_range,
+                                update_grid_acc);
+            }
           }
         }
         std::this_thread::sleep_until(sleep_time);
@@ -1269,18 +1254,23 @@ public:
 
         value->update_grid = UpdateGridT::create(false);
       }
+      updateVolumeRayIntersectors();
       std::this_thread::sleep_until(sleeping_time);
     }
     std::cout << "Integration thread received stop signal" << std::endl;
   }
 
+  void updateVolumeRayIntersectors()
   {
-    while (!m_thread_stop_signal)
+    if (m_fast_mode && !m_vdb_grid->empty())
     {
-      integrate();
-      std::this_thread::sleep_for(std::chrono::milliseconds(190));
+      m_inter = std::make_shared<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> >(*m_vdb_grid);
+      for (auto& [key, value] : m_input_sources)
+      {
+        value->volume_ray_intersector =
+          std::make_shared<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> >(*m_inter);
+      }
     }
-    std::cout << "Timer thread received stop signal" << std::endl;
   }
 
 
@@ -1357,13 +1347,12 @@ protected:
 
   mutable std::atomic<bool> m_map_mutex_requested{false};
 
-  // std::shared_ptr<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> > m_inter;
-
   std::map<std::string, std::shared_ptr<InputSource> > m_input_sources;
   std::atomic<bool> m_thread_stop_signal{false};
 
   std::map<std::string, std::thread> m_worker_threads;
   std::thread m_integration_thread;
+  std::shared_ptr<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> > m_inter;
 };
 
 #include "VDBMapping.hpp"
