@@ -1199,6 +1199,10 @@ public:
 
   void run(std::string source_id)
   {
+    while (!m_config_set)
+    {
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
     while (!m_thread_stop_signal)
     {
       if (!m_map_mutex_requested)
