@@ -61,6 +61,7 @@ namespace vdb_mapping {
 struct BaseConfig
 {
   double max_range;
+  double accumulation_period;
   std::string map_directory_path;
 };
 
@@ -121,6 +122,7 @@ public:
     }
     m_vdb_grid             = createVDBMap(m_resolution);
     m_artificial_area_grid = UpdateGridT::create(false);
+    m_integration_thread   = std::thread(&VDBMapping::integrate, this);
   }
   virtual ~VDBMapping()
   {
@@ -131,6 +133,10 @@ public:
       {
         value.join();
       }
+    }
+    if (m_integration_thread.joinable())
+    {
+      m_integration_thread.join();
     }
   }
 
@@ -1226,22 +1232,31 @@ public:
 
   void integrate()
   {
-    std::cout << "INTEGRATE" << std::endl;
-    auto t0               = std::chrono::high_resolution_clock::now();
-    m_map_mutex_requested = true;
-    std::unique_lock map_lock(*m_map_mutex);
-    m_map_mutex_requested                        = false;
-    auto t1                                      = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> ms = t1 - t0;
-    std::cout << "Getting lock took " << ms.count() << std::endl;
-    for (auto& [key, value] : m_input_sources)
+    while (!m_config_set)
     {
-      std::cout << "Processing grid of " << key << std::endl;
-      std::this_thread::sleep_for(std::chrono::milliseconds(5));
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+    while (!m_thread_stop_signal)
+    {
+      auto sleeping_time =
+        std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(m_accumulation_period);
+      std::cout << "Integrating data of all sensors" << std::endl;
+      m_map_mutex_requested = true;
+      std::unique_lock map_lock(*m_map_mutex);
+      m_map_mutex_requested = false;
+      for (auto& [key, value] : m_input_sources)
+      {
+        // TODO this will break the overwrite functionality... Fix in future release
+        // There will be only the last part in the overwrite grid
+        updateMap(value->update_grid);
+
+        value->update_grid = UpdateGridT::create(false);
+      }
+      std::this_thread::sleep_until(sleeping_time);
+    }
+    std::cout << "Integration thread received stop signal" << std::endl;
   }
 
-  void timer()
   {
     while (!m_thread_stop_signal)
     {
@@ -1302,6 +1317,11 @@ protected:
    * \brief Should vdb_mapping operate in the fast raycasting method
    */
   bool m_fast_mode;
+
+  /*!
+   * \brief Timeframe over which updates are accumulated before inserting them into the map
+   */
+  int m_accumulation_period;
   /*!
    * \brief path where the maps will be stored
    */
@@ -1324,7 +1344,9 @@ protected:
 
   std::map<std::string, std::shared_ptr<InputSource> > m_input_sources;
   std::atomic<bool> m_thread_stop_signal{false};
+
   std::map<std::string, std::thread> m_worker_threads;
+  std::thread m_integration_thread;
 };
 
 #include "VDBMapping.hpp"
