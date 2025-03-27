@@ -93,6 +93,7 @@ public:
     std::mutex update_grid_mutex;
     std::mutex input_data_mutex;
     std::optional<std::pair<PointCloudT::ConstPtr, Eigen::Matrix<double, 3, 1> > > input_data;
+    std::chrono::milliseconds max_input_period;
   };
 
   VDBMapping()                  = delete;
@@ -1187,12 +1188,20 @@ public:
   std::shared_ptr<std::shared_mutex> getUpdateGridMutex() { return m_map_mutex; }
   std::shared_ptr<std::shared_mutex> getConsumableUpdateGridMutex() { return m_map_mutex; }
 
-  void addInputSource(std::string source_id, double max_range)
+  void addInputSource(std::string source_id, double max_range, double max_rate)
   {
     auto s                        = std::make_shared<InputSource>();
     s->source_id                  = source_id;
     s->max_range                  = max_range;
     s->update_grid                = UpdateGridT::create(false);
+    if (max_rate < 0)
+    {
+      s->max_input_period = std::chrono::milliseconds(0);
+    }
+    else
+    {
+      s->max_input_period = std::chrono::milliseconds((int)(1000.0 / max_rate));
+    }
     m_worker_threads[source_id]   = std::thread(&VDBMapping::run, this, source_id);
     m_input_sources[s->source_id] = s;
   }
@@ -1207,6 +1216,8 @@ public:
     {
       if (!m_map_mutex_requested)
       {
+        auto sleep_time =
+          std::chrono::high_resolution_clock::now() + m_input_sources[source_id]->max_input_period;
         if (m_input_sources[source_id]->input_data)
         {
           std::shared_lock map_lock(*m_map_mutex);
@@ -1230,6 +1241,7 @@ public:
             raycastPointCloud(measurement.first, measurement.second, update_grid_acc);
           }
         }
+        std::this_thread::sleep_until(sleep_time);
       }
     }
     std::cout << "Thread for source " << source_id << " received stop signal." << std::endl;
