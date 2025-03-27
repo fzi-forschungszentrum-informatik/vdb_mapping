@@ -60,7 +60,9 @@ namespace vdb_mapping {
  */
 struct BaseConfig
 {
+  // When redesigning split into static and changable config
   double max_range;
+  bool fast_mode;
   double accumulation_period;
   std::string map_directory_path;
 };
@@ -103,9 +105,8 @@ public:
    *
    * \param resolution Resolution of the VDB Grid
    */
-  VDBMapping(const double resolution, bool fast_mode)
+  VDBMapping(const double resolution)
     : m_resolution(resolution)
-    , m_fast_mode(fast_mode)
     , m_config_set(false)
     , m_artificial_areas_present(false)
   {

@@ -5,7 +5,7 @@ namespace vdb_mapping {
 
 TEST(Mapping, SetConfig)
 {
-  OccupancyVDBMapping map(1, false);
+  OccupancyVDBMapping map(1);
   OccupancyVDBMapping::PointCloudT::Ptr cloud(new OccupancyVDBMapping::PointCloudT);
   cloud->points.emplace_back(0, 0, 1);
   Eigen::Matrix<double, 3, 1> origin(0, 0, 0);
@@ -15,12 +15,13 @@ TEST(Mapping, SetConfig)
   EXPECT_EQ(acc.getValue(coord), 0.0);
   Config conf;
   conf.max_range      = 10;
+  conf.fast_mode      = false;
   conf.prob_hit       = 0.9;
   conf.prob_miss      = 0.1;
   conf.prob_thres_max = 0.51;
   conf.prob_thres_min = 0.49;
   map.setConfig(conf);
-  map.addInputSource("test", conf.max_range);
+  map.addInputSource("test", conf.max_range, 0);
   auto log_hit  = static_cast<float>(log(conf.prob_hit) - log(1 - conf.prob_hit));
   auto log_miss = static_cast<float>(log(conf.prob_miss) - log(1 - conf.prob_miss));
   map.insertPointCloud(cloud, origin, "test");
@@ -31,15 +32,16 @@ TEST(Mapping, SetConfig)
 TEST(Mapping, InsertPositivePoint)
 {
   double resolution = 0.1;
-  OccupancyVDBMapping map(resolution, false);
+  OccupancyVDBMapping map(resolution);
   Config conf;
   conf.max_range      = 10;
+  conf.fast_mode      = false;
   conf.prob_hit       = 0.9;
   conf.prob_miss      = 0.1;
   conf.prob_thres_max = 0.51;
   conf.prob_thres_min = 0.49;
   map.setConfig(conf);
-  map.addInputSource("test", conf.max_range);
+  map.addInputSource("test", conf.max_range, 0);
 
   auto log_hit  = static_cast<float>(log(conf.prob_hit) - log(1 - conf.prob_hit));
   auto log_miss = static_cast<float>(log(conf.prob_miss) - log(1 - conf.prob_miss));
@@ -63,15 +65,16 @@ TEST(Mapping, InsertPositivePoint)
 TEST(Mapping, InsertNegativePoint)
 {
   double resolution = 0.1;
-  OccupancyVDBMapping map(resolution, false);
+  OccupancyVDBMapping map(resolution);
   Config conf;
   conf.max_range      = 10;
+  conf.fast_mode      = false;
   conf.prob_hit       = 0.9;
   conf.prob_miss      = 0.1;
   conf.prob_thres_max = 0.51;
   conf.prob_thres_min = 0.49;
   map.setConfig(conf);
-  map.addInputSource("test", conf.max_range);
+  map.addInputSource("test", conf.max_range, 0);
 
   auto log_hit  = static_cast<float>(log(conf.prob_hit) - log(1 - conf.prob_hit));
   auto log_miss = static_cast<float>(log(conf.prob_miss) - log(1 - conf.prob_miss));
@@ -95,15 +98,16 @@ TEST(Mapping, InsertNegativePoint)
 TEST(Mapping, InsertMaxRangePoint)
 {
   double resolution = 0.1;
-  OccupancyVDBMapping map(resolution, false);
+  OccupancyVDBMapping map(resolution);
   Config conf;
   conf.max_range      = 0.5;
+  conf.fast_mode      = false;
   conf.prob_hit       = 0.9;
   conf.prob_miss      = 0.1;
   conf.prob_thres_max = 0.51;
   conf.prob_thres_min = 0.49;
   map.setConfig(conf);
-  map.addInputSource("test", conf.max_range);
+  map.addInputSource("test", conf.max_range, 0);
 
   auto log_miss = static_cast<float>(log(conf.prob_miss) - log(1 - conf.prob_miss));
 
@@ -125,15 +129,16 @@ TEST(Mapping, InsertMaxRangePoint)
 
 TEST(Mapping, ResetMap)
 {
-  OccupancyVDBMapping map(1, false);
+  OccupancyVDBMapping map(1);
   Config conf;
   conf.max_range      = 10;
+  conf.fast_mode      = false;
   conf.prob_hit       = 0.9;
   conf.prob_miss      = 0.1;
   conf.prob_thres_max = 0.51;
   conf.prob_thres_min = 0.49;
   map.setConfig(conf);
-  map.addInputSource("test", conf.max_range);
+  map.addInputSource("test", conf.max_range, 0);
 
   auto log_hit = static_cast<float>(log(conf.prob_hit) - log(1 - conf.prob_hit));
 
