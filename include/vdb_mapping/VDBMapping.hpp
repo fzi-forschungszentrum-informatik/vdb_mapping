@@ -38,7 +38,6 @@
 #include <chrono>
 #include <eigen3/Eigen/Geometry>
 #include <iostream>
-#include <queue>
 #include <shared_mutex>
 
 #include <openvdb/Types.h>
@@ -89,8 +88,8 @@ public:
     double max_range;
     UpdateGridT::Ptr update_grid;
     std::mutex update_grid_mutex;
-    std::mutex input_queue_mutex;
-    std::queue<std::pair<PointCloudT::ConstPtr, Eigen::Matrix<double, 3, 1> > > input_queue;
+    std::mutex input_data_mutex;
+    std::optional<std::pair<PointCloudT::ConstPtr, Eigen::Matrix<double, 3, 1> > > input_data;
   };
 
   VDBMapping()                  = delete;
@@ -293,11 +292,17 @@ public:
                         const Eigen::Matrix<double, 3, 1>& origin,
                         const std::string source)
   {
-    std::unique_lock lock(m_input_sources[source]->input_queue_mutex);
+    std::unique_lock lock(m_input_sources[source]->input_data_mutex);
     std::pair<PointCloudT::ConstPtr, Eigen::Matrix<double, 3, 1> > measurement;
     measurement.first  = cloud;
     measurement.second = origin;
-    m_input_sources[source]->input_queue.push(measurement);
+    if (m_input_sources[source]->input_data)
+    {
+      std::cout << "There is currently a sensor measurement not integrated. The worker thread "
+                   "seems to fall behind. Dropping last data point."
+                << std::endl;
+    }
+    m_input_sources[source]->input_data = measurement;
   }
 
   /*!
@@ -1191,20 +1196,13 @@ public:
     {
       if (!m_map_mutex_requested)
       {
-        size_t queue_size = m_input_sources[source_id]->input_queue.size();
-        if (queue_size > 1)
-        {
-          std::cout << "There are currently " << queue_size
-                    << " elements in the queue. The worker thread seems to fall behind"
-                    << std::endl;
-        }
-        if (queue_size != 0)
+        if (m_input_sources[source_id]->input_data)
         {
           std::shared_lock map_lock(*m_map_mutex);
           std::cout << "Raycasting: " << m_input_sources[source_id]->source_id << std::endl;
           std::pair<PointCloudT::ConstPtr, Eigen::Matrix<double, 3, 1> > measurement;
-          measurement = m_input_sources[source_id]->input_queue.front();
-          m_input_sources[source_id]->input_queue.pop();
+          measurement = *m_input_sources[source_id]->input_data;
+          m_input_sources[source_id]->input_data.reset();
           std::unique_lock update_grid_lock(m_input_sources[source_id]->update_grid_mutex);
           UpdateGridT::Accessor update_grid_acc =
             m_input_sources[source_id]->update_grid->getAccessor();
