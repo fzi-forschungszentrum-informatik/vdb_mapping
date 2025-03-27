@@ -1178,6 +1178,7 @@ public:
     {
       s->max_range = max_range;
     }
+    s->update_grid = UpdateGridT::create(false);
     if (max_rate < 0)
     {
       s->max_input_period = std::chrono::milliseconds(0);
