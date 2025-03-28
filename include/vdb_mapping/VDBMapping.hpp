@@ -1146,38 +1146,39 @@ public:
     {
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+    auto& source = m_input_sources[source_id];
     while (!m_thread_stop_signal)
     {
       if (!m_map_mutex_requested)
       {
         auto sleep_time =
-          std::chrono::high_resolution_clock::now() + m_input_sources[source_id]->max_input_period;
-        if (m_input_sources[source_id]->input_data)
+          std::chrono::high_resolution_clock::now() + source->max_input_period;
+        if (source->input_data)
         {
           std::shared_lock map_lock(*m_map_mutex);
-          std::cout << "Raycasting: " << m_input_sources[source_id]->source_id << std::endl;
+          std::cout << "Raycasting: " << source->source_id << std::endl;
           std::pair<PointCloudT::ConstPtr, Eigen::Matrix<double, 3, 1> > measurement;
-          measurement = *m_input_sources[source_id]->input_data;
-          m_input_sources[source_id]->input_data.reset();
-          std::unique_lock update_grid_lock(m_input_sources[source_id]->update_grid_mutex);
+          measurement = *source->input_data;
+          source->input_data.reset();
+          std::unique_lock update_grid_lock(source->update_grid_mutex);
           UpdateGridT::Accessor update_grid_acc =
-            m_input_sources[source_id]->update_grid->getAccessor();
+            source->update_grid->getAccessor();
 
-          if (m_input_sources[source_id]->max_range > 0)
+          if (source->max_range > 0)
           {
             if (m_fast_mode)
             {
               raycastPointCloud(measurement.first,
                                 measurement.second,
-                                m_input_sources[source_id]->max_range,
+                                source->max_range,
                                 update_grid_acc,
-                                m_input_sources[source_id]->volume_ray_intersector);
+                                source->volume_ray_intersector);
             }
             else
             {
               raycastPointCloud(measurement.first,
                                 measurement.second,
-                                m_input_sources[source_id]->max_range,
+                                source->max_range,
                                 update_grid_acc);
             }
           }
