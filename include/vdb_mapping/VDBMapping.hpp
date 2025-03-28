@@ -39,6 +39,7 @@
 #include <eigen3/Eigen/Geometry>
 #include <iostream>
 #include <shared_mutex>
+#include <optional>
 
 #include <openvdb/Types.h>
 #include <openvdb/io/Stream.h>
