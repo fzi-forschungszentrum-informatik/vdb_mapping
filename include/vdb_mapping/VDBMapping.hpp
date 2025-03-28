@@ -104,7 +104,7 @@ public:
   VDBMapping& operator=(const VDBMapping&) = delete;
 
   /*!
-   * \brief Construktur creates a new VDBMapping objekt with parametrizable grid resolution
+   * \brief Constructor creates a new VDBMapping object with parametrizable grid resolution
    *
    * \param resolution Resolution of the VDB Grid
    */
@@ -263,6 +263,12 @@ public:
       m_vdb_grid = openvdb::gridPtrCast<GridT>(base_grid);
     }
     file_handle.close();
+    
+    
+    morphologicalCloseMap<GridT>(m_vdb_grid, 2);
+
+    auto bbox = m_vdb_grid->evalActiveVoxelBoundingBox();
+    std::cout << "Bounding box: \n" << bbox;
     map_lock.unlock();
 
     return true;
@@ -317,23 +323,19 @@ public:
 
   /*!
    * \brief Integrates the accumulated updates into the map
-   *
-   * \param update_grid Update grid
-   * \param overwrite_grid Overwrite grid
    */
-  void integrateUpdate(UpdateGridT::Ptr& update_grid, UpdateGridT::Ptr& overwrite_grid)
+  void integrateUpdate()
   {
     m_map_mutex_requested = true;
     std::unique_lock map_lock(*m_map_mutex);
     m_map_mutex_requested = false;
     for (auto& [key, value] : m_input_sources)
     {
-      // TODO this will break the overwrite functionality... Fix in future release
-      // There will be only the last part in the overwrite grid
-      overwrite_grid = updateMap(value->update_grid);
+      updateMap(value->update_grid);
 
       value->update_grid = UpdateGridT::create(false);
     }
+    updateVolumeRayIntersectors();
   }
 
   /*!
@@ -349,31 +351,8 @@ public:
                         const Eigen::Matrix<double, 3, 1>& origin,
                         const std::string source)
   {
-    UpdateGridT::Ptr update_grid;
-    UpdateGridT::Ptr overwrite_grid;
-
-    return insertPointCloud(cloud, origin, source, update_grid, overwrite_grid);
-  }
-
-  /*!
-   * \brief Handles the integration of new PointCloud data into the VDB data structure.
-   * All datapoints are raycasted starting from the origin position
-   *
-   * \param cloud Input cloud in map coordinates
-   * \param origin Sensor position in map coordinates
-   * \param update_grid Update grid that was created internally while mapping
-   * \param overwrite_grid Overwrite grid containing all changed voxel indices
-   *
-   * \returns Was the insertion of the new pointcloud successful
-   */
-  bool insertPointCloud(const PointCloudT::ConstPtr& cloud,
-                        const Eigen::Matrix<double, 3, 1>& origin,
-                        const std::string source,
-                        UpdateGridT::Ptr& update_grid,
-                        UpdateGridT::Ptr& overwrite_grid)
-  {
     accumulateUpdate(cloud, origin, source);
-    integrateUpdate(update_grid, overwrite_grid);
+    integrateUpdate();
     return true;
   }
 
@@ -635,33 +614,6 @@ public:
         return false;
       }
     }
-  }
-
-  /*!
-   * \brief Overwrites the active states of a map given an update grid
-   *
-   * \param update_grid Update Grid containing all states that changed during the last update
-   */
-  void overwriteMap(const UpdateGridT::Ptr& update_grid)
-  {
-    std::cout << "This function is no longer working correctly as it wasn't used a lot. If you "
-                 "direly need it contact the maintainer. Maybe you get lucky..."
-              << std::endl;
-    return;
-    std::unique_lock map_lock(*m_map_mutex);
-    typename GridT::Accessor acc = m_vdb_grid->getAccessor();
-    for (UpdateGridT::ValueOnCIter iter = update_grid->cbeginValueOn(); iter; ++iter)
-    {
-      if (*iter)
-      {
-        acc.setActiveState(iter.getCoord(), true);
-      }
-      else
-      {
-        acc.setActiveState(iter.getCoord(), false);
-      }
-    }
-    map_lock.unlock();
   }
 
   /*!
@@ -1247,18 +1199,8 @@ public:
       auto sleeping_time =
         std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(m_accumulation_period);
       std::cout << "Integrating data of all sensors" << std::endl;
-      m_map_mutex_requested = true;
-      std::unique_lock map_lock(*m_map_mutex);
-      m_map_mutex_requested = false;
-      for (auto& [key, value] : m_input_sources)
-      {
-        // TODO this will break the overwrite functionality... Fix in future release
-        // There will be only the last part in the overwrite grid
-        updateMap(value->update_grid);
-
-        value->update_grid = UpdateGridT::create(false);
-      }
-      updateVolumeRayIntersectors();
+    
+      integrateUpdate();
       std::this_thread::sleep_until(sleeping_time);
     }
     std::cout << "Integration thread received stop signal" << std::endl;
