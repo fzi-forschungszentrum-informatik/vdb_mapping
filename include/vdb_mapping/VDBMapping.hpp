@@ -126,16 +126,16 @@ public:
     }
     m_vdb_grid             = createVDBMap(m_resolution);
     m_artificial_area_grid = UpdateGridT::create(false);
-    m_integration_thread   = std::thread(&VDBMapping::integrate, this);
+    m_integration_thread   = std::thread(&VDBMapping::integrationThread, this);
   }
   virtual ~VDBMapping()
   {
     m_thread_stop_signal = true;
-    for (auto& [key, value] : m_worker_threads)
+    for (auto& [source_id, worker_thread] : m_worker_threads)
     {
-      if (value.joinable())
+      if (worker_thread.joinable())
       {
-        value.join();
+        worker_thread.join();
       }
     }
     if (m_integration_thread.joinable())
@@ -169,10 +169,10 @@ public:
     m_vdb_grid = createVDBMap(m_resolution);
     map_lock.unlock();
 
-    for (auto& [key, value] : m_input_sources)
+    for (auto& [source_id, source] : m_input_sources)
     {
-      std::unique_lock update_grid_lock(value->update_grid_mutex);
-      value->update_grid = UpdateGridT::create(false);
+      std::unique_lock update_grid_lock(source->update_grid_mutex);
+      source->update_grid = UpdateGridT::create(false);
     }
   }
 
@@ -263,8 +263,8 @@ public:
       m_vdb_grid = openvdb::gridPtrCast<GridT>(base_grid);
     }
     file_handle.close();
-    
-    
+
+
     morphologicalCloseMap<GridT>(m_vdb_grid, 2);
 
     auto bbox = m_vdb_grid->evalActiveVoxelBoundingBox();
@@ -329,11 +329,11 @@ public:
     m_map_mutex_requested = true;
     std::unique_lock map_lock(*m_map_mutex);
     m_map_mutex_requested = false;
-    for (auto& [key, value] : m_input_sources)
+    for (auto& [source_id, source] : m_input_sources)
     {
-      updateMap(value->update_grid);
+      updateMap(source->update_grid);
 
-      value->update_grid = UpdateGridT::create(false);
+      source->update_grid = UpdateGridT::create(false);
     }
     updateVolumeRayIntersectors();
   }
@@ -543,13 +543,13 @@ public:
     const openvdb::Coord& ray_end_index,
     typename GridT::Accessor& grid_acc,
     UpdateGridT::Accessor& update_grid_acc,
-    std::shared_ptr<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> > m_inter) const
+    std::shared_ptr<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> > intersector) const
   {
     openvdb::Vec3d ray_direction = (ray_end_index.asVec3d() - ray_origin_index);
     RayT ray(ray_origin_index.asVec3d() + 0.5, ray_direction, 0, 1);
-    m_inter->setIndexRay(ray);
+    intersector->setIndexRay(ray);
     std::vector<RayT::TimeSpan> hits;
-    m_inter->hits(hits);
+    intersector->hits(hits);
     for (auto& hit : hits)
     {
       RayT fine_ray(ray_origin_index.asVec3d() + 0.5, ray_direction, hit.t0, hit.t1);
@@ -1136,11 +1136,11 @@ public:
     {
       s->max_input_period = std::chrono::milliseconds((int)(1000.0 / max_rate));
     }
-    m_worker_threads[source_id]   = std::thread(&VDBMapping::run, this, source_id);
+    m_worker_threads[source_id]   = std::thread(&VDBMapping::accumulationThread, this, source_id);
     m_input_sources[s->source_id] = s;
   }
 
-  void run(std::string source_id)
+  void accumulationThread(std::string source_id)
   {
     while (!m_config_set)
     {
@@ -1188,7 +1188,7 @@ public:
     std::cout << "Thread for source " << source_id << " received stop signal." << std::endl;
   }
 
-  void integrate()
+  void integrationThread()
   {
     while (!m_config_set)
     {
@@ -1196,25 +1196,31 @@ public:
     }
     while (!m_thread_stop_signal)
     {
-      auto sleeping_time =
-        std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(m_accumulation_period);
+      auto sleeping_time = std::chrono::high_resolution_clock::now() +
+                           std::chrono::milliseconds(m_accumulation_period);
       std::cout << "Integrating data of all sensors" << std::endl;
-    
+
       integrateUpdate();
       std::this_thread::sleep_until(sleeping_time);
     }
     std::cout << "Integration thread received stop signal" << std::endl;
   }
 
+  /*!
+   * \brief Updates the volume ray intersectors of each worker thread with respect to the current
+   * map
+   */
   void updateVolumeRayIntersectors()
   {
     if (m_fast_mode && !m_vdb_grid->empty())
     {
-      m_inter = std::make_shared<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> >(*m_vdb_grid);
-      for (auto& [key, value] : m_input_sources)
+      m_volume_ray_intersector =
+        std::make_shared<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> >(*m_vdb_grid);
+      for (auto& [source_id, source] : m_input_sources)
       {
-        value->volume_ray_intersector =
-          std::make_shared<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> >(*m_inter);
+        source->volume_ray_intersector =
+          std::make_shared<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> >(
+            *m_volume_ray_intersector);
       }
     }
   }
@@ -1299,7 +1305,8 @@ protected:
 
   std::map<std::string, std::thread> m_worker_threads;
   std::thread m_integration_thread;
-  std::shared_ptr<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> > m_inter;
+  std::shared_ptr<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> >
+    m_volume_ray_intersector;
 };
 
 #include "VDBMapping.hpp"
