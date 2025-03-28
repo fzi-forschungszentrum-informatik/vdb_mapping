@@ -38,8 +38,8 @@
 #include <chrono>
 #include <eigen3/Eigen/Geometry>
 #include <iostream>
-#include <shared_mutex>
 #include <optional>
+#include <shared_mutex>
 
 #include <openvdb/Types.h>
 #include <openvdb/io/Stream.h>
@@ -1128,8 +1128,7 @@ public:
     {
       if (!m_map_mutex_requested)
       {
-        auto sleep_time =
-          std::chrono::high_resolution_clock::now() + source->max_input_period;
+        auto sleep_time = std::chrono::high_resolution_clock::now() + source->max_input_period;
         if (source->input_data)
         {
           std::shared_lock map_lock(*m_map_mutex);
@@ -1138,8 +1137,7 @@ public:
           measurement = *source->input_data;
           source->input_data.reset();
           std::unique_lock update_grid_lock(source->update_grid_mutex);
-          UpdateGridT::Accessor update_grid_acc =
-            source->update_grid->getAccessor();
+          UpdateGridT::Accessor update_grid_acc = source->update_grid->getAccessor();
 
           if (source->max_range > 0)
           {
@@ -1153,10 +1151,8 @@ public:
             }
             else
             {
-              raycastPointCloud(measurement.first,
-                                measurement.second,
-                                source->max_range,
-                                update_grid_acc);
+              raycastPointCloud(
+                measurement.first, measurement.second, source->max_range, update_grid_acc);
             }
           }
         }
