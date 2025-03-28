@@ -34,8 +34,9 @@ TEST(Mapping, InsertPositivePoint)
   double resolution = 0.1;
   OccupancyVDBMapping map(resolution);
   Config conf;
-  conf.max_range      = 10;
-  conf.fast_mode      = false;
+  conf.max_range = 10;
+  conf.fast_mode = false;
+  // conf.accumulation_period = 10.0;
   conf.prob_hit       = 0.9;
   conf.prob_miss      = 0.1;
   conf.prob_thres_max = 0.51;
@@ -67,8 +68,9 @@ TEST(Mapping, InsertNegativePoint)
   double resolution = 0.1;
   OccupancyVDBMapping map(resolution);
   Config conf;
-  conf.max_range      = 10;
-  conf.fast_mode      = false;
+  conf.max_range = 10;
+  conf.fast_mode = false;
+  // conf.accumulation_period = 10.0;
   conf.prob_hit       = 0.9;
   conf.prob_miss      = 0.1;
   conf.prob_thres_max = 0.51;
@@ -100,8 +102,9 @@ TEST(Mapping, InsertMaxRangePoint)
   double resolution = 0.1;
   OccupancyVDBMapping map(resolution);
   Config conf;
-  conf.max_range      = 0.5;
-  conf.fast_mode      = false;
+  conf.max_range = 0.5;
+  conf.fast_mode = false;
+  // conf.accumulation_period = 10.0;
   conf.prob_hit       = 0.9;
   conf.prob_miss      = 0.1;
   conf.prob_thres_max = 0.51;
@@ -131,8 +134,9 @@ TEST(Mapping, ResetMap)
 {
   OccupancyVDBMapping map(1);
   Config conf;
-  conf.max_range      = 10;
-  conf.fast_mode      = false;
+  conf.max_range = 10;
+  conf.fast_mode = false;
+  // conf.accumulation_period = 10.0;
   conf.prob_hit       = 0.9;
   conf.prob_miss      = 0.1;
   conf.prob_thres_max = 0.51;

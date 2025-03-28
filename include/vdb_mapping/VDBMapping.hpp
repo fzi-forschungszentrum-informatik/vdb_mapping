@@ -305,21 +305,72 @@ public:
    * \param origin Sensor position in map coordinates
    * \param source Specifies the input source
    */
-  void accumulateUpdate(const PointCloudT::ConstPtr& cloud,
-                        const Eigen::Matrix<double, 3, 1>& origin,
-                        const std::string source)
+  void accumulateUpdate(const std::string source_id)
   {
-    std::unique_lock lock(m_input_sources[source]->input_data_mutex);
+    auto source = m_input_sources.find(source_id);
+    if (source == m_input_sources.end())
+    {
+      std::cout << "Source not available" << std::endl;
+      return;
+    }
+    if (source->second->input_data)
+    {
+      std::shared_lock map_lock(*m_map_mutex);
+      std::cout << "Raycasting: " << source->second->source_id << std::endl;
+      std::pair<PointCloudT::ConstPtr, Eigen::Matrix<double, 3, 1> > measurement;
+      measurement = *source->second->input_data;
+      source->second->input_data.reset();
+      std::unique_lock update_grid_lock(source->second->update_grid_mutex);
+      UpdateGridT::Accessor update_grid_acc = source->second->update_grid->getAccessor();
+
+      if (source->second->max_range > 0)
+      {
+        if (m_fast_mode)
+        {
+          raycastPointCloud(measurement.first,
+                            measurement.second,
+                            source->second->max_range,
+                            update_grid_acc,
+                            source->second->volume_ray_intersector);
+        }
+        else
+        {
+          raycastPointCloud(
+            measurement.first, measurement.second, source->second->max_range, update_grid_acc);
+        }
+      }
+    }
+  }
+
+  /*!
+   * \brief Adds a new sensor point cloud to the accumulation pipeline
+   *
+   * \param cloud Input cloud in map coordinates
+   * \param origin Sensor position in map coordinates
+   * \param source_id Specifies the input source
+   */
+  void addDataToAccumulate(const PointCloudT::ConstPtr& cloud,
+                           const Eigen::Matrix<double, 3, 1>& origin,
+                           const std::string source_id)
+  {
+    auto source = m_input_sources.find(source_id);
+    if (source == m_input_sources.end())
+    {
+      std::cout << "Source not available" << std::endl;
+      return;
+    }
+
+    std::unique_lock lock(source->second->input_data_mutex);
     std::pair<PointCloudT::ConstPtr, Eigen::Matrix<double, 3, 1> > measurement;
     measurement.first  = cloud;
     measurement.second = origin;
-    if (m_input_sources[source]->input_data)
+    if (source->second->input_data)
     {
       std::cout << "There is currently a sensor measurement not integrated. The worker thread "
                    "seems to fall behind. Dropping last data point."
                 << std::endl;
     }
-    m_input_sources[source]->input_data = measurement;
+    source->second->input_data = measurement;
   }
 
   /*!
@@ -352,7 +403,8 @@ public:
                         const Eigen::Matrix<double, 3, 1>& origin,
                         const std::string source)
   {
-    accumulateUpdate(cloud, origin, source);
+    addDataToAccumulate(cloud, origin, source);
+    accumulateUpdate(source);
     integrateUpdate();
     return true;
   }
@@ -1105,7 +1157,7 @@ public:
       s->max_range = max_range;
     }
     s->update_grid = UpdateGridT::create(false);
-    if (max_rate < 0)
+    if (max_rate <= 0)
     {
       s->max_input_period = std::chrono::milliseconds(0);
     }
@@ -1123,39 +1175,13 @@ public:
     {
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
-    auto& source = m_input_sources[source_id];
     while (!m_thread_stop_signal)
     {
       if (!m_map_mutex_requested)
       {
-        auto sleep_time = std::chrono::high_resolution_clock::now() + source->max_input_period;
-        if (source->input_data)
-        {
-          std::shared_lock map_lock(*m_map_mutex);
-          std::cout << "Raycasting: " << source->source_id << std::endl;
-          std::pair<PointCloudT::ConstPtr, Eigen::Matrix<double, 3, 1> > measurement;
-          measurement = *source->input_data;
-          source->input_data.reset();
-          std::unique_lock update_grid_lock(source->update_grid_mutex);
-          UpdateGridT::Accessor update_grid_acc = source->update_grid->getAccessor();
-
-          if (source->max_range > 0)
-          {
-            if (m_fast_mode)
-            {
-              raycastPointCloud(measurement.first,
-                                measurement.second,
-                                source->max_range,
-                                update_grid_acc,
-                                source->volume_ray_intersector);
-            }
-            else
-            {
-              raycastPointCloud(
-                measurement.first, measurement.second, source->max_range, update_grid_acc);
-            }
-          }
-        }
+        auto sleep_time =
+          std::chrono::high_resolution_clock::now() + m_input_sources[source_id]->max_input_period;
+        accumulateUpdate(source_id);
         std::this_thread::sleep_until(sleep_time);
       }
     }
