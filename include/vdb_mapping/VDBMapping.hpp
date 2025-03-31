@@ -40,6 +40,7 @@
 #include <iostream>
 #include <optional>
 #include <shared_mutex>
+#include <thread>
 
 #include <openvdb/Types.h>
 #include <openvdb/io/Stream.h>
