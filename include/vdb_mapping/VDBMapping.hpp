@@ -266,11 +266,6 @@ public:
     }
     file_handle.close();
 
-
-    morphologicalCloseMap<GridT>(m_vdb_grid, 2);
-
-    auto bbox = m_vdb_grid->evalActiveVoxelBoundingBox();
-    std::cout << "Bounding box: \n" << bbox;
     map_lock.unlock();
 
     return true;
@@ -319,8 +314,10 @@ public:
       std::shared_lock map_lock(*m_map_mutex);
       std::cout << "Raycasting: " << source->second->source_id << std::endl;
       std::pair<PointCloudT::ConstPtr, Eigen::Matrix<double, 3, 1> > measurement;
+      std::unique_lock lock(source->second->input_data_mutex);
       measurement = *source->second->input_data;
       source->second->input_data.reset();
+      lock.unlock();
       std::unique_lock update_grid_lock(source->second->update_grid_mutex);
       UpdateGridT::Accessor update_grid_acc = source->second->update_grid->getAccessor();
 
@@ -362,16 +359,13 @@ public:
     }
 
     std::unique_lock lock(source->second->input_data_mutex);
-    std::pair<PointCloudT::ConstPtr, Eigen::Matrix<double, 3, 1> > measurement;
-    measurement.first  = cloud;
-    measurement.second = origin;
     if (source->second->input_data)
     {
       std::cout << "There is currently a sensor measurement not integrated. The worker thread "
                    "seems to fall behind. Dropping last data point."
                 << std::endl;
     }
-    source->second->input_data = measurement;
+    source->second->input_data = std::make_pair(cloud, origin);
   }
 
   /*!
