@@ -563,7 +563,8 @@ public:
     const openvdb::Coord& ray_end_index,
     typename GridT::Accessor& grid_acc,
     UpdateGridT::Accessor& update_grid_acc,
-    std::shared_ptr<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> > intersector) const
+    const std::shared_ptr<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> > intersector)
+    const
   {
     openvdb::Vec3d ray_direction = (ray_end_index.asVec3d() - ray_origin_index);
     RayT ray(ray_origin_index.asVec3d() + 0.5, ray_direction, 0, 1);
@@ -998,36 +999,36 @@ public:
   void restoreMapIntegrity()
   {
     // Set each voxel to its previous state
-    auto restoreState = [&](TData& voxel_value, bool& active) {
+    auto restore_state = [&](TData& voxel_value, bool& active) {
       setNodeState(voxel_value, active);
     };
     typename GridT::Accessor acc = m_vdb_grid->getAccessor();
     for (auto iter = m_artificial_area_grid->cbeginValueOn(); iter; ++iter)
     {
-      acc.modifyValueAndActiveState(iter.getCoord(), restoreState);
+      acc.modifyValueAndActiveState(iter.getCoord(), restore_state);
     }
     // Clear artificial grid
     m_artificial_area_grid->clear();
     m_artificial_areas_present = false;
   }
 
-  void
-  addArtificialAreas(const std::vector<std::vector<Eigen::Matrix<double, 4, 1> > > artificial_areas,
-                     const double negative_height,
-                     const double positive_height)
+  void addArtificialAreas(
+    const std::vector<std::vector<Eigen::Matrix<double, 4, 1> > >& artificial_areas,
+    const double negative_height,
+    const double positive_height)
   {
     // Restore map integrity by removing all artificial walls
     restoreMapIntegrity();
     m_artificial_areas_present = true;
 
     // Add all artificial areas
-    for (auto& artificial_area : artificial_areas)
+    for (const auto& artificial_area : artificial_areas)
     {
       addArtificialPolygon(artificial_area, negative_height, positive_height);
     }
   }
 
-  void addArtificialPolygon(const std::vector<Eigen::Matrix<double, 4, 1> > polygon,
+  void addArtificialPolygon(const std::vector<Eigen::Matrix<double, 4, 1> >& polygon,
                             const double negative_height,
                             const double positive_height)
   {
@@ -1038,8 +1039,8 @@ public:
     }
   }
 
-  void addArtificialWall(const Eigen::Matrix<double, 4, 1> start,
-                         const Eigen::Matrix<double, 4, 1> end,
+  void addArtificialWall(const Eigen::Matrix<double, 4, 1>& start,
+                         const Eigen::Matrix<double, 4, 1>& end,
                          const double negative_height,
                          const double positive_height)
   {

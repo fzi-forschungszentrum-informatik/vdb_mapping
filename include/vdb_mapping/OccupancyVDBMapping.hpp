@@ -129,14 +129,7 @@ protected:
   }
   inline bool setNodeState(float& voxel_value, bool& active) override
   {
-    if (voxel_value > m_logodds_thres_max)
-    {
-      active = true;
-    }
-    else
-    {
-      active = false;
-    }
+    active = voxel_value > m_logodds_thres_max;
     return true;
   }
 
