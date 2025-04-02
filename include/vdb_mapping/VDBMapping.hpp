@@ -563,7 +563,7 @@ public:
     const openvdb::Coord& ray_end_index,
     typename GridT::Accessor& grid_acc,
     UpdateGridT::Accessor& update_grid_acc,
-    const std::shared_ptr<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> > intersector)
+    const std::shared_ptr<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> >& intersector)
     const
   {
     openvdb::Vec3d ray_direction = (ray_end_index.asVec3d() - ray_origin_index);
@@ -859,30 +859,11 @@ public:
       {
         if (full_grid)
         {
-          for (auto iter = leaf_iter->cbeginValueAll(); iter; ++iter)
-          {
-            if (bounding_box.isInside(iter.getCoord()))
-            {
-              if (iter.isValueOn())
-              {
-                temp_acc.setValueOn(iter.getCoord(), iter.getValue());
-              }
-              else
-              {
-                temp_acc.setValueOff(iter.getCoord(), iter.getValue());
-              }
-            }
-          }
+          extractFullLeaf<TResultGrid>(temp_acc, bounding_box, leaf_iter);
         }
         else
         {
-          for (auto iter = leaf_iter->cbeginValueOn(); iter; ++iter)
-          {
-            if (bounding_box.isInside(iter.getCoord()))
-            {
-              temp_acc.setValueOn(iter.getCoord(), true);
-            }
-          }
+          extractSparseLeaf<TResultGrid>(temp_acc, bounding_box, leaf_iter);
         }
       }
     }
@@ -893,6 +874,40 @@ public:
     temp_grid->insertMeta("bb_min", openvdb::Vec3DMetadata(min));
     temp_grid->insertMeta("bb_max", openvdb::Vec3DMetadata(max));
     return temp_grid;
+  }
+
+  template <typename TResultGrid>
+  void extractFullLeaf(typename TResultGrid::Accessor& temp_acc,
+                       const openvdb::CoordBBox& bounding_box,
+                       const typename GridT::TreeType::LeafCIter& leaf) const
+  {
+    for (auto iter = leaf->cbeginValueAll(); iter; ++iter)
+    {
+      if (bounding_box.isInside(iter.getCoord()))
+      {
+        if (iter.isValueOn())
+        {
+          temp_acc.setValueOn(iter.getCoord(), iter.getValue());
+        }
+        else
+        {
+          temp_acc.setValueOff(iter.getCoord(), iter.getValue());
+        }
+      }
+    }
+  }
+  template <typename TResultGrid>
+  void extractSparseLeaf(typename TResultGrid::Accessor& temp_acc,
+                         const openvdb::CoordBBox& bounding_box,
+                         const typename GridT::TreeType::LeafCIter& leaf) const
+  {
+    for (auto iter = leaf->cbeginValueOn(); iter; ++iter)
+    {
+      if (bounding_box.isInside(iter.getCoord()))
+      {
+        temp_acc.setValueOn(iter.getCoord(), true);
+      }
+    }
   }
 
   /*!
