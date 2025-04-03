@@ -132,6 +132,10 @@ public:
     m_artificial_area_grid = UpdateGridT::create(false);
     m_integration_thread   = std::thread(&VDBMapping::integrationThread, this);
   }
+
+  /*!
+   * \brief Deconstructor that tears down all threads
+   */
   virtual ~VDBMapping()
   {
     m_thread_stop_signal = true;
@@ -182,7 +186,9 @@ public:
   }
 
   /*!
-   * \brief Saves the current map
+   * \brief Saves the current map as vdb file
+   *
+   * \returns Saving map successful
    */
   bool saveMap() const
   {
@@ -207,7 +213,7 @@ public:
   /*!
    * \brief Saves the active values of the current map as PCD file
    *
-   * \returns Saving pcd successfull
+   * \returns Saving pcd successful
    */
   bool saveMapToPCD()
   {
@@ -250,7 +256,9 @@ public:
   }
 
   /*!
-   * \brief Loads a stored map
+   * \brief Loads a stored map from a vdb file
+   *
+   * \returns Loading map from vdb file successful
    */
   bool loadMap(const std::string& file_path)
   {
@@ -302,7 +310,7 @@ public:
    *
    * \param cloud Input cloud in map coordinates
    * \param origin Sensor position in map coordinates
-   * \param source Specifies the input source
+   * \param source_id Specifies the input source
    */
   void accumulateUpdate(const PointCloudT::ConstPtr& cloud,
                         const Eigen::Matrix<double, 3, 1>& origin,
@@ -388,18 +396,24 @@ public:
    *
    * \param cloud Input cloud in map coordinates
    * \param origin Sensor position in map coordinates
+   * \param source_id Specifies the input source
    *
    * \returns Was the insertion of the new pointcloud successful
    */
   bool insertPointCloud(const PointCloudT::ConstPtr& cloud,
                         const Eigen::Matrix<double, 3, 1>& origin,
-                        const std::string source)
+                        const std::string source_id)
   {
-    accumulateUpdate(cloud, origin, source);
+    accumulateUpdate(cloud, origin, source_id);
     integrateUpdate();
     return true;
   }
 
+  /*!
+   * \brief Removes points directly from the map
+   *
+   * \param cloud Input point cloud that should be removed
+   */
   bool removePointsFromGrid(const PointCloudT::ConstPtr& cloud)
   {
     typename GridT::Accessor acc = m_vdb_grid->getAccessor();
@@ -416,6 +430,11 @@ public:
     return true;
   }
 
+  /*!
+   * \brief Adds points directly to the map
+   *
+   * \param cloud Input point cloud that should be added
+   */
   bool addPointsToGrid(const PointCloudT::ConstPtr& cloud)
   {
     typename GridT::Accessor acc = m_vdb_grid->getAccessor();
@@ -444,8 +463,9 @@ public:
    * \param origin Origin of the sensor measurement
    * \param raycast_range Maximum raycasting range
    * \param update_grid_acc Accessor to the grid in which the raycasting takes place
+   * \param intersector Optional volume ray intersector to determine collisions with the map
    *
-   * \returns Raycasted update grid
+   * \returns Raycasting successful
    */
   bool raycastPointCloud(
     const PointCloudT::ConstPtr& cloud,
@@ -529,16 +549,13 @@ public:
   }
 
   /*!
-   * \brief Casts a single ray into an update grid structure
+   * \brief Casts a single ray into an update grid structure using raycasting
    *
    * Each cell along the ray is marked as active.
    *
-   * \param ray_origin_world Ray origin in world coordinates
    * \param ray_origin_index Ray origin in index coordinates
-   * \param ray_end_world Ray endpoint in world coordinates
+   * \param ray_end_index Ray endpoint in index coordinates
    * \param update_grid_acc Accessor to the update grid
-   *
-   * \returns Final visited index coordinate
    */
   void castRayIntoGrid(const openvdb::Coord& ray_origin_index,
                        const openvdb::Coord& ray_end_index,
@@ -558,6 +575,15 @@ public:
     }
   }
 
+  /*!
+   * \brief Casts a single ray into an update grid structure using ray marching
+   *
+   * \param ray_origin_index Ray origin in index coordinates
+   * \param ray_end_index Ray endpoint in index coordinates
+   * \param grid_acc Accessor to the map grid
+   * \param update_grid_acc Accessor to the update grid
+   * \param intersector Volume ray intersector to determine collisions with the grid
+   */
   void castRayIntoGridFast(
     const openvdb::Coord& ray_origin_index,
     const openvdb::Coord& ray_end_index,
@@ -585,6 +611,14 @@ public:
     }
   }
 
+  /*!
+   * \brief Transforms world to index coordinates. The method additionaly consideres the edge case
+   * where the world coordinates lies directly in between two grids.
+   *
+   * \param world_coordinate Coordinate in world space
+   *
+   * \returns Coordinate in index space
+   */
   openvdb::Coord worldToIndex(const openvdb::Vec3d& world_coordinate) const
   {
     openvdb::Vec3d adjusted_world_coordinate = world_coordinate;
@@ -606,6 +640,16 @@ public:
     return index_coordinate;
   }
 
+  /*!
+   * \brief Raytraces a single ray through the map
+   *
+   * \param ray_origin_world Origin of the beam in world coordinates
+   * \param ray_direction Direction of the beam
+   * \param max_ray_length Maximum raycasting length
+   * \param end_point End point of the raycasting
+   *
+   * \returns Returns whether the raycasting hit an obstacle or not
+   */
   bool raytrace(const openvdb::Vec3d& ray_origin_world,
                 const openvdb::Vec3d& ray_direction,
                 const double max_ray_length,
@@ -643,7 +687,7 @@ public:
    *
    * \param temp_grid Grid containing all cells which shall be updated
    *
-   * \returns Was the insertion of the pointcloud successuff
+   * \returns Returns a grid containing all changed voxel
    */
   UpdateGridT::Ptr updateMap(const UpdateGridT::Ptr& temp_grid)
   {
@@ -876,6 +920,14 @@ public:
     return temp_grid;
   }
 
+  /*!
+   * \brief Extracts all voxel inside of a bounding box from a leaf
+   *
+   * @tparam TResultGrid Resulting Grid Type
+   * \param temp_acc Accessor to the resulting grid
+   * \param bounding_box Bounding box that should be extracted
+   * \param leaf Reference to the leaf iterator
+   */
   template <typename TResultGrid>
   void extractFullLeaf(typename TResultGrid::Accessor& temp_acc,
                        const openvdb::CoordBBox& bounding_box,
@@ -896,6 +948,15 @@ public:
       }
     }
   }
+
+  /*!
+   * \brief Extracts all active voxel inside of a bounding box from a leaf
+   *
+   * @tparam TResultGrid Resulting Grid Type
+   * \param temp_acc Accessor to the resulting grid
+   * \param bounding_box Bounding box that should be extracted
+   * \param leaf Reference to the leaf iterator
+   */
   template <typename TResultGrid>
   void extractSparseLeaf(typename TResultGrid::Accessor& temp_acc,
                          const openvdb::CoordBBox& bounding_box,
@@ -915,6 +976,8 @@ public:
    *
    * \param section Section grid containing the information about part of the map. The boundary box
    * of the section is encoded in the grids meta information
+   * \param smooth_map Specifies if the section should be morphologically smoothed
+   * \param smoothing_iterations Amount of morphological smoothing iterations
    *
    */
   void applyMapSectionGrid(const typename GridT::Ptr section,
@@ -949,6 +1012,8 @@ public:
    *
    * \param section Section grid containing the information about part of the map. The boundary box
    * of the section is encoded in the grids meta information
+   * \param smooth_map Specifies if the section should be morphologically smoothed
+   * \param smoothing_iterations Amount of morphological smoothing iterations
    *
    */
   void applyMapSectionUpdateGrid(const typename UpdateGridT::Ptr section,
@@ -980,18 +1045,41 @@ public:
     map_lock.unlock();
   }
 
+  /*!
+   * \brief Morphological closing operator
+   *
+   * @tparam TGrid Grid type
+   * \param grid Grid that should be morphologically processed
+   * \param iteratiosn Amount of morphological iterations
+   */
   template <typename TGrid>
   void morphologicalCloseMap(typename TGrid::Ptr grid, int iterations)
   {
     morphologicalDilateMap<TGrid>(grid, iterations);
     morphologicalErodeMap<TGrid>(grid, iterations);
   }
+
+  /*!
+   * \brief Morphological opening operator
+   *
+   * @tparam TGrid Grid type
+   * \param grid Grid that should be morphologically processed
+   * \param iteratiosn Amount of morphological iterations
+   */
   template <typename TGrid>
   void morphologicalOpenMap(typename TGrid::Ptr grid, int iterations)
   {
     morphologicalErodeMap<TGrid>(grid, iterations);
     morphologicalDilateMap<TGrid>(grid, iterations);
   }
+
+  /*!
+   * \brief Morphological dilation operator
+   *
+   * @tparam TGrid Grid type
+   * \param grid Grid that should be morphologically processed
+   * \param iteratiosn Amount of morphological iterations
+   */
   template <typename TGrid>
   void morphologicalDilateMap(typename TGrid::Ptr grid, int iterations)
   {
@@ -1001,6 +1089,14 @@ public:
                                        openvdb::tools::EXPAND_TILES,
                                        true);
   }
+
+  /*!
+   * \brief Morphological erosion operator
+   *
+   * @tparam TGrid Grid type
+   * \param grid Grid that should be morphologically processed
+   * \param iteratiosn Amount of morphological iterations
+   */
   template <typename TGrid>
   void morphologicalErodeMap(typename TGrid::Ptr grid, int iterations)
   {
@@ -1011,6 +1107,9 @@ public:
                                       true);
   }
 
+  /*!
+   * \brief Helper function to restore the map integrity after artificial data has been inserted
+   */
   void restoreMapIntegrity()
   {
     // Set each voxel to its previous state
@@ -1027,6 +1126,13 @@ public:
     m_artificial_areas_present = false;
   }
 
+  /*!
+   * \brief Adds a set of artificial Areas to the map
+   *
+   * \param artificial_areas Array of area polygons
+   * \params negative_height Specifies how low the polygon should be projected
+   * \params positive_height Specifies how high the polygon should be projected
+   */
   void addArtificialAreas(
     const std::vector<std::vector<Eigen::Matrix<double, 4, 1> > >& artificial_areas,
     const double negative_height,
@@ -1043,6 +1149,13 @@ public:
     }
   }
 
+  /*!
+   * \brief Adds a an artificial Area to the map
+   *
+   * \param artificial_areas Area as a polygons
+   * \params negative_height Specifies how low the polygon should be projected
+   * \params positive_height Specifies how high the polygon should be projected
+   */
   void addArtificialPolygon(const std::vector<Eigen::Matrix<double, 4, 1> >& polygon,
                             const double negative_height,
                             const double positive_height)
@@ -1054,6 +1167,14 @@ public:
     }
   }
 
+  /*!
+   * \brief Adds a an artificial Wall to the map
+   *
+   * \param start Start point of the wall
+   * \param end End point of the wall
+   * \params negative_height Specifies how low the polygon should be projected
+   * \params positive_height Specifies how high the polygon should be projected
+   */
   void addArtificialWall(const Eigen::Matrix<double, 4, 1>& start,
                          const Eigen::Matrix<double, 4, 1>& end,
                          const double negative_height,
@@ -1076,6 +1197,13 @@ public:
   }
 
 
+  /*!
+   * \brief Compresses a string as a byte array
+   *
+   * \param string Input string
+   *
+   * \returns Compressed byte array
+   */
   std::vector<uint8_t> compressString(const std::string& string) const
   {
     auto uncompressed = std::vector<uint8_t>(string.begin(), string.end());
@@ -1100,6 +1228,13 @@ public:
     return compressed;
   }
 
+  /*!
+   * \brief Decompresses a byte array into a string
+   *
+   * \param byte_array Input byte array
+   *
+   * returns Decompressed string
+   */
   std::string decompressByteArray(const std::vector<uint8_t>& byte_array) const
   {
     std::size_t len = ZSTD_getDecompressedSize(byte_array.data(), byte_array.size());
@@ -1124,6 +1259,14 @@ public:
     return map_str;
   }
 
+  /*!
+   * \brief Converts a grid into a byte array
+   *
+   * @tparam TGrid Grid Type
+   * \param grid Input grid
+   *
+   * \returns Compressed byte array representation of the grid
+   */
   template <typename TGrid>
   std::vector<uint8_t> gridToByteArray(typename TGrid::Ptr grid)
   {
@@ -1134,6 +1277,14 @@ public:
     return compressString(oss.str());
   }
 
+  /*!
+   * \brief Unpacks a compressed byte array into a grid
+   *
+   * @tparam TGrid Grid Type
+   * \param byte_array Input byte array
+   *
+   * \returns Pointer to the unpacked grid
+   */
   template <typename TGrid>
   typename TGrid::Ptr byteArrayToGrid(std::vector<uint8_t> byte_array)
   {
@@ -1147,10 +1298,18 @@ public:
     return update_grid;
   }
 
+  /*!
+   * \brief Returns the map mutex
+   */
   std::shared_ptr<std::shared_mutex> getMapMutex() { return m_map_mutex; }
-  std::shared_ptr<std::shared_mutex> getUpdateGridMutex() { return m_map_mutex; }
-  std::shared_ptr<std::shared_mutex> getConsumableUpdateGridMutex() { return m_map_mutex; }
 
+  /*!
+   * \brief Adds a sensor input for a sensour source
+   *
+   * \param source_id Unique identifier of input source
+   * \param max_range Maximum raycasting range
+   * \param max_rate Maximum integration rate
+   */
   void addInputSource(std::string source_id, double max_range, double max_rate)
   {
     auto s       = std::make_shared<InputSource>();
@@ -1176,6 +1335,12 @@ public:
     m_input_sources[s->source_id] = s;
   }
 
+
+  /*!
+   * \brief Handles function of all accumulation worker threads
+   *
+   * \param source_id Identifier of input source
+   */
   void accumulationThread(std::string source_id)
   {
     while (!m_config_set)
@@ -1206,6 +1371,9 @@ public:
     std::cout << "Thread for source " << source_id << " received stop signal." << std::endl;
   }
 
+  /*!
+   * \brief Handles function of integration worker thread
+   */
   void integrationThread()
   {
     while (!m_config_set)
@@ -1281,6 +1449,10 @@ protected:
    * \brief VDB grid pointer
    */
   typename GridT::Ptr m_vdb_grid;
+
+  /*!
+   * \brief Grid containing all artificial areas of the map
+   */
   typename UpdateGridT::Ptr m_artificial_area_grid;
   /*!
    * \brief Maximum raycasting distance
@@ -1309,20 +1481,51 @@ protected:
    */
   bool m_config_set;
 
-
+  /*!
+   * \brief Compression level for grid compression
+   */
   unsigned int m_compression_level = 1;
+
+  /*!
+   * \brief Specifies whether artificial areas are present
+   */
   bool m_artificial_areas_present;
 
-
+  /*!
+   * \brief Map mutex for the map grid
+   */
   mutable std::shared_ptr<std::shared_mutex> m_map_mutex;
 
+  /*!
+   * \brief Specifies whether a unique lock on the map mutex was requested.
+   * Used to implement a priority mutex.
+   */
   mutable std::atomic<bool> m_map_mutex_requested{false};
 
+  /*!
+   * \brief List of input sources
+   */
   std::map<std::string, std::shared_ptr<InputSource> > m_input_sources;
+
+  /*!
+   * \brief Stop signal for all worker threads
+   */
   std::atomic<bool> m_thread_stop_signal{false};
 
+  /*!
+   * \brief List of all accumulation worker threads
+   */
   std::map<std::string, std::thread> m_worker_threads;
+
+  /*!
+   * \brief Integration worker thread
+   */
   std::thread m_integration_thread;
+
+  /*!
+   * \brief Global volume ray intersector. This one has to be stores since the volume ray
+   * intersectors of each input source is just a shallow copy with a separate grid accessor.
+   */
   std::shared_ptr<openvdb::tools::VolumeRayIntersector<openvdb::FloatGrid> >
     m_volume_ray_intersector;
 };
