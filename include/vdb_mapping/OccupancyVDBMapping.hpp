@@ -46,8 +46,8 @@ struct Config : BaseConfig
 class OccupancyVDBMapping : public VDBMapping<float, Config>
 {
 public:
-  OccupancyVDBMapping(const double resolution, bool fast_mode)
-    : VDBMapping<float, Config>(resolution, fast_mode)
+  OccupancyVDBMapping(const double resolution)
+    : VDBMapping<float, Config>(resolution)
   {
   }
 
@@ -129,14 +129,7 @@ protected:
   }
   inline bool setNodeState(float& voxel_value, bool& active) override
   {
-    if (voxel_value > m_logodds_thres_max)
-    {
-      active = true;
-    }
-    else
-    {
-      active = false;
-    }
+    active = voxel_value > m_logodds_thres_max;
     return true;
   }
 

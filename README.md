@@ -8,7 +8,7 @@ The VDB Mapping core library was primarily developed to be used in combination w
 
 ### Requirements
 This library requires [OpenVDB](https://www.openvdb.org/) as it is build around it. 
-This library was initially developed using Version 5.0 and should work with all versions above.  
+The library requires at least Version 8.3 and should work with all versions above.
 
 As the apt packages are quite outdated for most systems, we recommend building at least OpenVDB v9.0.0 from source using the provided [build instructions](https://github.com/AcademySoftwareFoundation/openvdb)
 
