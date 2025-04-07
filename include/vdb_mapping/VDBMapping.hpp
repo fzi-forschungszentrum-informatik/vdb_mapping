@@ -319,11 +319,11 @@ public:
     auto source = m_input_sources.find(source_id);
     if (source == m_input_sources.end())
     {
-      std::cout << "Source not available" << std::endl;
+      std::cout << "Tried to accumulate update for " << source_id << ". Source not available"
+                << std::endl;
       return;
     }
     std::shared_lock map_lock(*m_map_mutex);
-    std::cout << "Raycasting: " << source->second->source_id << std::endl;
     std::unique_lock update_grid_lock(source->second->update_grid_mutex);
     UpdateGridT::Accessor update_grid_acc = source->second->update_grid->getAccessor();
 
@@ -358,17 +358,12 @@ public:
     auto source = m_input_sources.find(source_id);
     if (source == m_input_sources.end())
     {
-      std::cout << "Source not available" << std::endl;
+      std::cout << "Tried to add data for accumulation of " << source_id << ". Source not available"
+                << std::endl;
       return;
     }
 
     std::unique_lock lock(source->second->input_data_mutex);
-    if (source->second->input_data)
-    {
-      std::cout << "There is currently a sensor measurement not integrated. The worker thread "
-                   "seems to fall behind. Dropping last data point."
-                << std::endl;
-    }
     source->second->input_data = std::make_pair(cloud, origin);
     source->second->data_available_cv.notify_all();
   }
@@ -496,8 +491,6 @@ public:
     // Ray end point in world coordinates
     openvdb::Vec3d ray_end_world;
 
-    auto t0 = std::chrono::high_resolution_clock::now();
-
     bool grid_empty              = m_vdb_grid->empty();
     typename GridT::Accessor acc = m_vdb_grid->getAccessor();
 
@@ -541,10 +534,6 @@ public:
         update_grid_acc.setValueOn(ray_end_index, true);
       }
     }
-    auto t1                                      = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> ms = t1 - t0;
-    std::cout << "Old: " << ms.count() << std::endl;
-
     return true;
   }
 
@@ -1384,8 +1373,6 @@ public:
     {
       auto sleeping_time = std::chrono::high_resolution_clock::now() +
                            std::chrono::milliseconds(m_accumulation_period);
-      std::cout << "Integrating data of all sensors" << std::endl;
-
       integrateUpdate();
       std::this_thread::sleep_until(sleeping_time);
     }
