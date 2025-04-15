@@ -279,6 +279,7 @@ public:
 
     map_lock.unlock();
 
+
     return true;
   }
 
@@ -635,37 +636,82 @@ public:
    * \param ray_origin_world Origin of the beam in world coordinates
    * \param ray_direction Direction of the beam
    * \param max_ray_length Maximum raycasting length
+   * \param success Did the raycast hit an obstacle
    * \param end_point End point of the raycasting
    *
-   * \returns Returns whether the raycasting hit an obstacle or not
    */
-  bool raytrace(const openvdb::Vec3d& ray_origin_world,
+  void raytrace(const openvdb::Vec3d& ray_origin_world,
                 const openvdb::Vec3d& ray_direction,
-                const double max_ray_length,
+                const double max_ray_lengths,
+                bool& success,
                 openvdb::Vec3d& end_point)
   {
-    typename GridT::Accessor acc    = m_vdb_grid->getAccessor();
-    openvdb::Vec3d ray_origin_index = m_vdb_grid->worldToIndex(ray_origin_world);
-    RayT ray(ray_origin_index, ray_direction);
-    DDAT dda(ray);
-    while (true)
+    // In this instance, the single raytrace is not the base method
+    // This is because if the batch raytrace would call the single raytrace it would try to always
+    // get the shared lock again, which might decrease performance or lead to unexpected waits
+    std::vector<openvdb::Vec3d> ray_origins_world = {ray_origin_world};
+    std::vector<openvdb::Vec3d> ray_directions    = {ray_direction};
+    std::vector<double> max_ray_length            = {max_ray_lengths};
+    std::vector<bool> successes;
+    std::vector<openvdb::Vec3d> end_points;
+
+    raytrace(ray_origins_world, ray_directions, max_ray_lengths, successes, end_points);
+
+    success   = successes[0];
+    end_point = end_points[0];
+  }
+
+
+  /*!
+   * \brief Raytraces a single ray through the map
+   *
+   * \param ray_origins_world Array of origins of the beams in world coordinates
+   * \param ray_directions Array of directions of the beams
+   * \param max_ray_lengths Array of maximum raycasting lengths
+   * \param successes Array specifying if the corresponding raycast hit an obstacle
+   * \param end_points Array of end point of the raycasting
+   *
+   */
+  void raytrace(const std::vector<openvdb::Vec3d>& ray_origins_world,
+                const std::vector<openvdb::Vec3d>& ray_directions,
+                const std::vector<double> max_ray_lengths,
+                std::vector<bool>& successes,
+                std::vector<openvdb::Vec3d>& end_points)
+  {
+    std::shared_lock map_lock(*m_map_mutex);
+    typename GridT::Accessor acc = m_vdb_grid->getAccessor();
+    successes.resize(ray_origins_world.size());
+    end_points.resize(ray_origins_world.size());
+    for (size_t i = 0; i < ray_origins_world.size(); i++)
     {
-      double distance =
-        m_resolution * std::sqrt(std::pow((dda.voxel().x() - ray_origin_index.x()), 2) +
-                                 std::pow((dda.voxel().y() - ray_origin_index.y()), 2) +
-                                 std::pow((dda.voxel().z() - ray_origin_index.z()), 2));
-      if (distance < max_ray_length)
+      // Normalize direction vector just to be sure
+      openvdb::Vec3d direction_norm = ray_directions[i];
+      direction_norm.normalize();
+      direction_norm *= max_ray_lengths[i];
+
+      openvdb::Vec3d ray_origin_index    = m_vdb_grid->worldToIndex(ray_origins_world[i]);
+      openvdb::Vec3d ray_direction_index = m_vdb_grid->worldToIndex(direction_norm);
+
+
+      RayT ray(ray_origin_index, ray_direction_index, 0, 1);
+
+      m_volume_ray_intersector->setIndexRay(ray);
+      double t0, t1;
+
+      if (m_volume_ray_intersector->march(t0, t1))
       {
-        if (acc.isValueOn(dda.voxel()))
-        {
-          end_point = m_vdb_grid->indexToWorld(dda.voxel());
-          return true;
-        }
-        dda.step();
+        RayT fine_ray(ray_origin_index, ray_direction_index, t0, t1);
+        DDAT dda(fine_ray);
+
+        while (dda.step() && !acc.isValueOn(dda.voxel()))
+          ;
+        end_points[i] = m_vdb_grid->indexToWorld(dda.voxel());
+        successes[i]  = true;
       }
       else
       {
-        return false;
+        end_points[i] = m_vdb_grid->indexToWorld(ray_origin_index + ray_direction_index);
+        successes[i]  = false;
       }
     }
   }
