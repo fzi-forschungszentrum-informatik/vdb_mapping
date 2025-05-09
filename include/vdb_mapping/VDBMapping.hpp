@@ -674,7 +674,7 @@ public:
    */
   void raytrace(const std::vector<openvdb::Vec3d>& ray_origins_world,
                 const std::vector<openvdb::Vec3d>& ray_directions,
-                const std::vector<double> max_ray_lengths,
+                const std::vector<double>& max_ray_lengths,
                 std::vector<bool>& successes,
                 std::vector<openvdb::Vec3d>& end_points)
   {
@@ -696,7 +696,8 @@ public:
       RayT ray(ray_origin_index, ray_direction_index, 0, 1);
 
       m_volume_ray_intersector->setIndexRay(ray);
-      double t0, t1;
+      double t0;
+      double t1;
 
       if (m_volume_ray_intersector->march(t0, t1))
       {
@@ -704,7 +705,10 @@ public:
         DDAT dda(fine_ray);
 
         while (dda.step() && !acc.isValueOn(dda.voxel()))
-          ;
+        {
+          // Intentionally empty. Loop goes on as long as as a next dda step is possible and no
+          // active voxel was found along the ray
+        };
         end_points[i] = m_vdb_grid->indexToWorld(dda.voxel());
         successes[i]  = true;
       }
