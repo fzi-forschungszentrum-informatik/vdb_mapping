@@ -3,6 +3,7 @@
     matrix:
       - ROS_DISTRO: noetic
         CI_IMAGE: ids-git.fzi.de:5555/continuous_integration/ci_docker_images/ubuntu_20.04_ros
+        CLANG_TIDY_VERSION: 12
       - ROS_DISTRO: jazzy
         CI_IMAGE: ids-git.fzi.de:5555/continuous_integration/ci_docker_images/ubuntu_24.04_ros2:jazzy
       - ROS_DISTRO: humble
