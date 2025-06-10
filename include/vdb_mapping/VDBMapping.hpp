@@ -799,6 +799,13 @@ public:
   typename GridT::Ptr getGrid() const { return m_vdb_grid; }
 
   /*!
+   * \brief Returns the resolution of the map
+   *
+   * \returns Resolution
+   */
+  double getResolution() const { return m_resolution; }
+
+  /*!
    * \brief Creates a world coordinate bounding box around a transform
    *
    * \param min_boundary Minimum boundary of box
