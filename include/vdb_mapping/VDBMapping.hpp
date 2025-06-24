@@ -1053,6 +1053,39 @@ public:
     map_lock.unlock();
   }
 
+  void transformAndApplyMapSectionGrid(const typename GridT::Ptr section,
+                                       const Eigen::Matrix<double, 4, 4>& transform,
+                                       bool smooth_map          = false,
+                                       int smoothing_iterations = 2)
+  {
+    if (smooth_map)
+    {
+      morphologicalCloseMap<GridT>(section, smoothing_iterations);
+    }
+
+    typename GridT::Accessor section_acc = section->getAccessor();
+    std::unique_lock map_lock(*m_map_mutex);
+    typename GridT::Accessor acc = m_vdb_grid->getAccessor();
+    for (auto iter = section->cbeginValueAll(); iter; ++iter)
+    {
+      openvdb::Vec3d buffer = section->indexToWorld(iter.getCoord());
+      Eigen::Matrix<double, 4, 1> eigen_world(buffer.x(), buffer.y(), buffer.z(), 1.0);
+      eigen_world = transform * eigen_world;
+      buffer      = openvdb::Vec3d(eigen_world.x(), eigen_world.y(), eigen_world.z());
+      buffer      = section->worldToIndex(buffer);
+      openvdb::Coord coord((int)buffer.x(), (int)buffer.y(), (int)buffer.z());
+      if (section_acc.isValueOn(coord))
+      {
+        acc.setValueOn(coord, section_acc.getValue(coord));
+      }
+      else
+      {
+        acc.setValueOff(coord, section_acc.getValue(coord));
+      }
+    }
+    map_lock.unlock();
+  }
+
   /*!
    * \brief Applies a map section update grid to the map
    *
@@ -1087,6 +1120,30 @@ public:
     for (auto iter = section->cbeginValueOn(); iter; ++iter)
     {
       acc.setActiveState(iter.getCoord(), true);
+    }
+    map_lock.unlock();
+  }
+
+  void transformAndApplyMapSectionUpdateGrid(const typename UpdateGridT::Ptr section,
+                                             const Eigen::Matrix<double, 4, 4>& transform,
+                                             bool smooth_map          = false,
+                                             int smoothing_iterations = 2)
+  {
+    if (smooth_map)
+    {
+      morphologicalCloseMap<UpdateGridT>(section, smoothing_iterations);
+    }
+    typename UpdateGridT::Accessor section_acc = section->getAccessor();
+    std::unique_lock map_lock(*m_map_mutex);
+    typename GridT::Accessor acc = m_vdb_grid->getAccessor();
+    for (auto iter = section->cbeginValueOn(); iter; ++iter)
+    {
+      openvdb::Vec3d buffer = section->indexToWorld(iter.getCoord());
+      Eigen::Matrix<double, 4, 1> eigen_world(buffer.x(), buffer.y(), buffer.z(), 1.0);
+      eigen_world = transform * eigen_world;
+      buffer      = openvdb::Vec3d(eigen_world.x(), eigen_world.y(), eigen_world.z());
+      buffer      = section->worldToIndex(buffer);
+      acc.setActiveState(openvdb::Coord((int)buffer.x(), (int)buffer.y(), (int)buffer.z()), true);
     }
     map_lock.unlock();
   }
